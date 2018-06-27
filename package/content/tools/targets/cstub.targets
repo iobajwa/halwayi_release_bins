@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+Copyright Bhavnit Singh Bajwa   iobajwa@gmail.com
+Please refer to Halwayi's license agreement for more details
+-->
+
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+
+
+  <!--
+  ************************************************************************************************************************
+                                                  Properties Utilized
+  ************************************************************************************************************************
+  -->
+
+
+
+
+
+
+  <!-- 
+  ************************************************************************************************************************
+                                              Include External Dependencies
+  ************************************************************************************************************************
+  -->
+
+  <UsingTask AssemblyFile= "$(BuilderTasksPath)\halwayiTasks.dll" TaskName= "FindFilesFromIncludedFilesTask" />
+  <UsingTask AssemblyFile= "$(BuilderTasksPath)\halwayiTasks.dll" TaskName= "FindMathcingMetadataTask" />
+  <UsingTask AssemblyFile= "$(BuilderTasksPath)\halwayiTasks.dll" TaskName= "MetadataContainsEntryTask" />
+  <UsingTask AssemblyFile= "$(BuilderTasksPath)\halwayiTasks.dll" TaskName= "MetadataAppendEntryTask" />
+  <UsingTask AssemblyFile= "$(BuilderTasksPath)\halwayiTasks.dll" TaskName= "CreateStubsInParallelTask" />
+  <UsingTask AssemblyFile= "$(BuilderTasksPath)\halwayiTasks.dll" TaskName= "StubManagementGeneratorTask" />
+  
+
+
+
+
+
+  <!--
+  ************************************************************************************************************************
+                                                     Internal Targets
+  ************************************************************************************************************************
+  -->
+
+  <Target Name="_GenerateAnyRequiredStubs" DependsOnTargets="_DiscoverStubableFiles;
+                                                            _DiscoverStubConfigMetadata;
+                                                            _GenerateStubs;
+                                                            _GenerateStubSetupFiles">
+  </Target>
+
+
+  <Target Name="_DiscoverStubableFiles">
+    <FindFilesFromIncludedFilesTask IncludedFiles="@(IncludedFilesItem)" Prefix="$(StubPrefix)">
+      <Output ItemName="StubableFilesItem" TaskParameter="FoundFiles" />
+      <Output ItemName="StubableFilesItemRaw" TaskParameter="FoundFilesRaw" />
+      <Output PropertyName="StubableFilesCount" TaskParameter="FoundFilesCount" />
+      <Output ItemName="StubMetaDataItem" TaskParameter="ConfigMetadata" />
+    </FindFilesFromIncludedFilesTask>
+
+    <ItemGroup>
+      <RunnerIncludeFilesItem Include="@(StubableFilesItemRaw)" />
+    </ItemGroup>
+
+    <Message Text= "Discovered Stubable Files:" Importance= "normal"  Condition= " '$(StubableFilesCount)' != '0' " />
+    <Message Text= "     %(StubableFilesItem.Identity)" Importance= "normal"  Condition= " '$(StubableFilesCount)' != '0' " />
+    <Message Text= "Discovered Stub Metadata:" Importance= "normal"  Condition= " '$(StubableFilesCount)' != '0' " />
+    <Message Text= "    %(StubMetaDataItem.Identity)" Importance= "normal"  Condition= " '$(StubableFilesCount)' != '0' " />
+  </Target>
+
+
+  <Target Name="_DiscoverStubConfigMetadata" Outputs="$(StubPrefix)" Inputs= "%(StubableFilesItem.Identity)" Condition= " '$(StubableFilesCount)' != '0' ">
+
+    <FindMathcingMetadataTask File="%(StubableFilesItem.Identity)" RawMetaDataChunks="@(StubMetaDataItem)">
+      <Output PropertyName= "_processedConfigMetaData" TaskParameter= "FoundMetaData" />
+    </FindMathcingMetadataTask>
+
+    <ItemGroup>
+      <StubableFilesItem Condition="'%(StubableFilesItem.Identity)' == '%(Identity)'" >
+        <Metadata>$(_processedConfigMetaData)</Metadata>
+      </StubableFilesItem>
+    </ItemGroup>
+  </Target>
+
+  
+  
+  <Target Name="_GenerateStubs" DependsOnTargets="_GenerateStubsForGhost;_GenerateStubsForNative" Condition=" '$(StubableFilesCount)' != '0' ">
+    <Message Text="Generated $(StubableFilesCount) stub(s)." Importance="Normal" />
+  </Target>
+
+  <Target Name= "_GenerateStubsForGhost" Condition="'$(BuildGhostAlso)' == 'true'">
+    <CreateStubsInParallelTask StubableFiles="@(StubableFilesItem)" 
+                               Paths="@(GhostIncludedPathsItem)" 
+                               TestFile="$(TestFileFullname)" 
+                               ToolPath="$(CStubPath)\cstub.exe" 
+                               StubPrefix="$(StubPrefix)" 
+                               OutputPath="$(CStubGhostRoot)" 
+                               MaximumParallelExecutions="$(CoresUsage)" 
+                               TimeoutPeriod="3000"
+                               CTypesHeader="$(CTypesFile)"
+                               />
+  </Target>
+
+  <Target Name= "_GenerateStubsForNative" Condition="'$(BuildNativeAlso)' == 'true'">
+    <CreateStubsInParallelTask StubableFiles="@(StubableFilesItem)" 
+                               Paths="@(NativeIncludedPathsItem)" 
+                               TestFile="$(TestFileFullname)" 
+                               ToolPath="$(CStubPath)\cstub.exe" 
+                               StubPrefix="$(StubPrefix)" 
+                               OutputPath="$(CStubNativeRoot)" 
+                               MaximumParallelExecutions="$(CoresUsage)" 
+                               CTypesHeader="$(CTypesFile)"
+                               TimeoutPeriod="3000" />
+  </Target>
+
+
+  <Target Name="_GenerateStubSetupFiles" DependsOnTargets= "_GenerateStubSetupFilesForGhost;_GenerateStubSetupFilesForNative" />
+
+  <Target Name="_GenerateStubSetupFilesForGhost" Condition= " '$(BuildGhostAlso)' == 'True' " Inputs="$(TestFileFullname)" Outputs="$(CStubGhostRoot)\$(CStubManagementFile)">
+    <ItemGroup>
+      <GeneratedStubFilesGhost Include= "$(CStubGhostRoot)\**\$(StubPrefix)*.c" />
+    </ItemGroup>
+    <StubManagementGeneratorTask GeneratedFiles="@(GeneratedStubFilesGhost)" BasePath="$(CStubGhostRoot)" OutputFile="$(CStubGhostRoot)\$(CStubManagementFile)" />
+  </Target>
+
+  <Target Name="_GenerateStubSetupFilesForNative" Condition= "$(BuildNativeAlso) == 'True'" Inputs="$(TestFileFullname)" Outputs="$(CStubNativeRoot)\$(CStubManagementFile)">
+    <ItemGroup>
+      <GeneratedStubFilesNative Include= "$(CStubNativeRoot)\**\$(StubPrefix)*.c" />
+    </ItemGroup>
+    <StubManagementGeneratorTask GeneratedFiles="@(GeneratedStubFilesNative)" BasePath="$(CStubNativeRoot)" OutputFile="$(CStubNativeRoot)\$(CStubManagementFile)" />
+  </Target>
+
+
+</Project>

@@ -1,0 +1,22 @@
+
+Usage:
+
+	--inject_functions=void some_function (int some_arg);
+
+		What if interface we are mocking has some implementations in the form of macros? Simply ask the
+		AutoMock to inject a function definition while creating a mock. AutoMock will also create a stub
+		for the original interface file (of the same name) in the test's (platform specific) artifact folder 
+		(so that the CUT now #includes this stub file and not the original interface).
+
+		Be carefull however as if the original interface's macro definitions change, be sure to update your
+		tests as well. An automatic macro-to-function conversion is no possible because AutoMock will not
+		be able to figure out the context of each parameter to the macro (read: datatype).
+
+		Also, make sure the CUT includes the mockable interface with angle '<' '>' brackets and not with 
+		quotes WHEN both the CUT and the mockable interface are present in the same directory structure 
+		(c compiler gives priority to the same folder).
+
+		Caveats:
+
+			* 	The implementation of this feature required AutoMock to exclude the test (platform specific)
+				artifact folder while discovering mockable files.

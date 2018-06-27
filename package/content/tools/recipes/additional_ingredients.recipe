@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<!-- 
+	************************************************************************************************************************
+																						 Additional Ingredients recipe
+																							
+		Provides a simplified interface to pass additional preprocessor directives without having to manually override the
+		respected targets. The user simply needs to include this recipe in his/her own and override the $(AdditionalIngredients).
+		By default the property carries no value.
+	************************************************************************************************************************
+	-->
+
+
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+
+	<!-- 
+	************************************************************************************************************************
+																							Declare Properties and Items
+	************************************************************************************************************************
+	-->
+
+	<PropertyGroup>
+		<AdditionalIngredients />
+	</PropertyGroup>
+
+	<!--
+	************************************************************************************************************************
+																								Override Public Targets
+	************************************************************************************************************************
+	-->
+
+	<Target Name = "__InjectAdditionalIngredients" BeforeTargets = "_BeforeSetup" >
+		<PropertyGroup>
+			<ReleaseDefines>$(ReleaseDefines);$(AdditionalIngredients)</ReleaseDefines>
+		</PropertyGroup>
+		<Message Text = "Added additional ingredients into build: $(AdditionalIngredients)" Importance="high" />
+		<Message Text = "Updated Preprocessor Arguments: $(ReleaseDefines)" Importance="high" />
+	</Target>
+
+</Project>

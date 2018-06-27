@@ -1,0 +1,1 @@
+The version of unity included as part of the Halwayi software package is a forked and modified version of the original unity library. The licensing terms that apply to Halwayi also apply to this modified version of unity. Please refer to Halwayi's License for details.

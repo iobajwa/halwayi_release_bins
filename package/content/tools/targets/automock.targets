@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+Copyright Bhavnit Singh Bajwa   iobajwa@gmail.com
+Please refer to Halwayi's license agreement for more details
+-->
+
+
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+
+
+  <!--
+  ************************************************************************************************************************
+                                                  Properties Utilized
+  ************************************************************************************************************************
+  -->
+
+
+
+
+
+
+  <!-- 
+  ************************************************************************************************************************
+                                              Include External Dependencies
+  ************************************************************************************************************************
+  -->
+
+  <UsingTask AssemblyFile= "$(BuilderTasksPath)\halwayiTasks.dll" TaskName= "FindFilesFromIncludedFilesTask" />
+  <UsingTask AssemblyFile= "$(BuilderTasksPath)\halwayiTasks.dll" TaskName= "FindMathcingMetadataTask" />
+  <UsingTask AssemblyFile= "$(BuilderTasksPath)\halwayiTasks.dll" TaskName= "MetadataContainsEntryTask" />
+  <UsingTask AssemblyFile= "$(BuilderTasksPath)\halwayiTasks.dll" TaskName= "MetadataAppendEntryTask" />
+  <UsingTask AssemblyFile= "$(BuilderTasksPath)\halwayiTasks.dll" TaskName= "CreateMocksInParallelTask" />
+  <UsingTask AssemblyFile= "$(BuilderTasksPath)\halwayiTasks.dll" TaskName= "FindFileTask" />
+  
+
+
+
+
+
+  <!--
+  ************************************************************************************************************************
+                                                     Internal Targets
+  ************************************************************************************************************************
+  -->
+
+  <Target Name="_GenerateAnyRequiredMocks" DependsOnTargets="_DiscoverMockableFiles;_DiscoverMockConfigMetadata;_GenerateMocks;_InjectGeneratedMocks">
+  </Target>
+
+  <Target Name="_DiscoverMockableFiles">
+    <FindFilesFromIncludedFilesTask IncludedFiles="@(IncludedFilesItem)" Prefix="$(MockPrefix)">
+      <Output ItemName="MockableFilesItem" TaskParameter="FoundFiles" />
+      <Output ItemName="MockableFilesItemRaw" TaskParameter="FoundFilesRaw" />
+      <Output PropertyName="MockableFilesCount" TaskParameter="FoundFilesCount" />
+      <Output ItemName="mockMetaDataItem" TaskParameter="ConfigMetadata" />
+    </FindFilesFromIncludedFilesTask>
+
+    <ItemGroup>
+      <RunnerIncludeFilesItem Include="@(MockableFilesItemRaw)" />
+    </ItemGroup>
+
+    <Message Text= "Discovered Mockable Files:" Importance= "normal"  Condition= " '$(MockableFilesCount)' != '0' " />
+    <Message Text= "     %(MockableFilesItem.Identity)" Importance= "normal"  Condition= " '$(MockableFilesCount)' != '0' " />
+    <Message Text= "Discovered Mock Metadata:" Importance= "normal"  Condition= " '$(MockableFilesCount)' != '0' " />
+    <Message Text= "    %(mockMetaDataItem.Identity)" Importance= "normal"  Condition= " '$(MockableFilesCount)' != '0' " />
+  </Target>
+
+  <Target Name="_DiscoverMockConfigMetadata" Outputs="$(MockPrefix)" Inputs= "%(MockableFilesItem.Identity)" Condition= " '$(MockableFilesCount)' != '0' ">
+    <PropertyGroup>
+      <_strictOrderingEnabled>false</_strictOrderingEnabled>
+    </PropertyGroup>
+
+    <!--<MacroFunctionsParserTasks FileToSearch="%(MockableFilesItem.Identity)">
+      <Output PropertyName = "_macroFunctions" TaskParameter = "MacroFunctionsFound" />
+    </MacroFunctionsParserTasks>-->
+    
+    <FindMathcingMetadataTask File="%(MockableFilesItem.Identity)" RawMetaDataChunks="@(mockMetaDataItem)">
+      <Output PropertyName= "_configMetaData" TaskParameter= "FoundMetaData" />
+    </FindMathcingMetadataTask>
+
+    <MetadataContainsEntryTask Metadata="$(_configMetaData)" Entry="--enforce_strict_ordering=true">
+      <Output PropertyName= "_strictOrderingEnabled" TaskParameter= "Result" />
+    </MetadataContainsEntryTask>
+    <MetadataContainsEntryTask Metadata="$(_configMetaData)" Entry="--enforce_strict_ordering" Condition="'$(_strictOrderingEnabled)' == 'False'">
+      <Output PropertyName= "_strictOrderingEnabled" TaskParameter= "Result" />
+    </MetadataContainsEntryTask>
+    <MetadataContainsEntryTask Metadata="$(_configMetaData)" Entry="--check_order" Condition="'$(_strictOrderingEnabled)' == 'False'">
+      <Output PropertyName= "_strictOrderingEnabled" TaskParameter= "Result" />
+    </MetadataContainsEntryTask>
+    <MetadataContainsEntryTask Metadata="$(_configMetaData)" Entry="--check_call_order" Condition="'$(_strictOrderingEnabled)' == 'False'">
+      <Output PropertyName= "_strictOrderingEnabled" TaskParameter= "Result" />
+    </MetadataContainsEntryTask>
+    <MetadataContainsEntryTask Metadata="$(_configMetaData)" Entry="--strict_order" Condition="'$(_strictOrderingEnabled)' == 'False'">
+      <Output PropertyName= "_strictOrderingEnabled" TaskParameter= "Result" />
+    </MetadataContainsEntryTask>
+    <MetadataContainsEntryTask Metadata="$(_configMetaData)" Entry="--strict_call_order" Condition="'$(_strictOrderingEnabled)' == 'False'">
+      <Output PropertyName= "_strictOrderingEnabled" TaskParameter= "Result" />
+    </MetadataContainsEntryTask>
+    <MetadataContainsEntryTask Metadata="$(_configMetaData)" Entry="--enforce_order" Condition="'$(_strictOrderingEnabled)' == 'False'">
+      <Output PropertyName= "_strictOrderingEnabled" TaskParameter= "Result" />
+    </MetadataContainsEntryTask>
+    <MetadataContainsEntryTask Metadata="$(_configMetaData)" Entry="--enforce_call_order" Condition="'$(_strictOrderingEnabled)' == 'False'">
+      <Output PropertyName= "_strictOrderingEnabled" TaskParameter= "Result" />
+    </MetadataContainsEntryTask>
+    <MetadataContainsEntryTask Metadata="$(_configMetaData)" Entry="--enforce_strict_call_order" Condition="'$(_strictOrderingEnabled)' == 'False'">
+      <Output PropertyName= "_strictOrderingEnabled" TaskParameter= "Result" />
+    </MetadataContainsEntryTask>
+    <MetadataContainsEntryTask Metadata="$(_configMetaData)" Entry="--enforce_strict_call_ordering" Condition="'$(_strictOrderingEnabled)' == 'False'">
+      <Output PropertyName= "_strictOrderingEnabled" TaskParameter= "Result" />
+    </MetadataContainsEntryTask>
+
+
+    <PropertyGroup>
+      <mock_append_metadata>--mock_prefix=$(MockPrefix.ToLower()) --verbosity=1 --mock_path="$(TestFileArtifactFolder)\Ghost"</mock_append_metadata>
+    </PropertyGroup>
+    <MetadataAppendEntryTask Metadata="$(_configMetaData)" Entry="$(mock_append_metadata)">
+      <Output PropertyName= "_processedConfigMetaData" TaskParameter= "ProcessedMetadata" />
+    </MetadataAppendEntryTask>
+
+    <ItemGroup>
+      <MockableFilesItem Condition="'%(MockableFilesItem.Identity)' == '%(Identity)'" >
+        <StrictlyOrdered>$(_strictOrderingEnabled)</StrictlyOrdered>
+        <Metadata>$(_processedConfigMetaData)</Metadata>
+        <!--<MacroFunctions>$(_macroFunctions)</MacroFunctions>-->
+      </MockableFilesItem>
+    </ItemGroup>
+
+    <PropertyGroup Condition ="'$(_strictOrderingEnabled.ToLower())' == 'true'">
+      <CMockStrictOrderingEnabled>true</CMockStrictOrderingEnabled>
+    </PropertyGroup>
+
+  </Target>
+
+  
+  
+  <Target Name="_GenerateMocks" DependsOnTargets="_GenerateMocksForGhost;_GenerateMocksForNative" Condition=" '$(MockableFilesCount)' != '0' ">
+  </Target>
+
+  <Target Name="_InjectGeneratedMocks" DependsOnTargets="_InjectGeneratedMocksForGhost;_InjectGeneratedMocksForNative" Condition=" '$(MockableFilesCount)' != '0' ">
+  </Target>
+
+  <Target Name = "_GenerateMocksForGhost" Condition="'$(BuildGhostAlso)' == 'true'">
+    <CreateMocksInParallelTask MockableFiles="@(MockableFilesItem)" 
+                               Paths="@(GhostIncludedPathsItem)" 
+                               TestFile="$(TestFileFullname)" 
+                               ToolPath="$(CMockAutoPath)\cmock.rb" 
+                               MockPrefix="$(MockPrefix)" 
+                               OutputPath="$(TestFileArtifactFolder)\Ghost" 
+                               MaximumParallelExecutions="$(CoresUsage)" 
+                               TimeoutPeriod="3000" />
+  </Target>
+
+  <Target Name = "_GenerateMocksForNative" Condition="'$(BuildNativeAlso)' == 'true'">
+    <CreateMocksInParallelTask MockableFiles="@(MockableFilesItem)" 
+                               Paths="@(NativeIncludedPathsItem)" 
+                               TestFile="$(TestFileFullname)" 
+                               ToolPath="$(CMockAutoPath)\cmock.rb" 
+                               MockPrefix="$(MockPrefix)" 
+                               OutputPath="$(TestFileArtifactFolder)\$(NativeToolChainID)" 
+                               MaximumParallelExecutions="$(CoresUsage)" 
+                               TimeoutPeriod="3000" />
+  </Target>
+
+  <Target Name="_InjectGeneratedMocksForGhost" Condition=" '$(BuildGhostAlso)' == 'true' ">
+    <FindFileTask FileToFind = "cmock.c" PathsToSearch = "@(GhostIncludedPathsItem)">
+      <Output TaskParameter = "FoundFileFullPath" PropertyName = "_cmockFileWithPath" />
+    </FindFileTask>
+    <ItemGroup>
+      <GhostInjectedLinks Include ="$(_cmockFileWithPath)" />
+    </ItemGroup>
+
+    <Message Text = "Ghost Injected Links: " Importance = "normal" />
+    <Message Text = "                %(GhostInjectedLinks.Identity)" Importance = "normal" />
+  </Target>
+
+  <Target Name="_InjectGeneratedMocksForNative" Condition=" '$(BuildNativeAlso)' == 'true' ">
+    <FindFileTask FileToFind = "cmock.c" PathsToSearch = "@(NativeIncludedPathsItem)">
+      <Output TaskParameter = "FoundFileFullPath" PropertyName = "_cmockFileWithPath" />
+    </FindFileTask>
+    <ItemGroup>
+      <NativeInjectedLinks Include ="$(_cmockFileWithPath)" />
+    </ItemGroup>
+
+    <Message Text = "Native Injected Links: " Importance = "normal" />
+    <Message Text = "                %(NativeInjectedLinks.Identity)" Importance = "normal" />
+  </Target>
+
+</Project>
+
+

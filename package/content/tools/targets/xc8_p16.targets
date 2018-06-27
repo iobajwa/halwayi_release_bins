@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+Copyright Bhavnit Singh Bajwa   iobajwa@gmail.com
+Please refer to Halwayi's license agreement for more details
+-->
+
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+
+
+  <!-- 
+  ************************************************************************************************************************
+                                              Include External Dependencies
+  ************************************************************************************************************************
+  -->
+
+  <!-- 
+        xc8_p16 is a special case for pic16 and pic12 chips which uses xc8 compiler but since the compiler does not
+        support setjmp library for these devices, we had to modify the Halwayi to use separate version of unity which
+        does not utilizes setjmp.
+        
+        Hence, simply use the build targets of xc8.
+  -->
+  <Import Project="$(MSBuildThisFileDirectory)\xc8.targets" />
+  
+</Project>

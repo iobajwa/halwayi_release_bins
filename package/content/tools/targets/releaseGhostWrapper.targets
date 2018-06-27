@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+Copyright Bhavnit Singh Bajwa   iobajwa@gmail.com
+Please refer to Halwayi's license agreement for more details
+-->
+
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+
+	<!-- 
+	************************************************************************************************************************
+													Declare Properties and Items
+	************************************************************************************************************************
+	-->
+	
+	<PropertyGroup>
+		<OutDir></OutDir>
+		<IntDir></IntDir>
+		<TargetName></TargetName>
+		<Directives></Directives>
+		<Paths></Paths>
+		<Platform>Win32</Platform>
+		<OutputName></OutputName>
+		<ReleaseBuild>true</ReleaseBuild>
+	</PropertyGroup>
+
+
+	
+	
+	
+	<!-- 
+	************************************************************************************************************************
+													Include External Dependencies
+	************************************************************************************************************************
+	-->
+	<Import Project="$(TargetsToolPath)\ghostgcc.targets" Condition=" '$(BuildGhost)' == 'true' AND '$(GhostToolchain)' == 'gcc' "/>
+  	<Import Project="$(TargetsToolPath)\ghostvcc.targets" Condition=" '$(BuildGhost)' == 'true' AND '$(GhostToolchain)' != 'gcc' "/>
+	<Import Project= "$(GhostLinkFile)" Condition="Exists($(GhostLinkFile))"/>
+
+	
+
+
+
+
+	
+	
+
+	<!--
+	************************************************************************************************************************
+																										 Public Targets
+	************************************************************************************************************************
+	-->
+	
+	<Target Name= "GhostReleaseAll" DependsOnTargets= "_PerformPreSetupSteps;SetupGhostBuildProperties;GhostInfo;GhostBuildAll">
+	</Target>
+
+
+
+	
+</Project>

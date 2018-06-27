@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+Copyright Bhavnit Singh Bajwa   iobajwa@gmail.com
+Please refer to Halwayi's license agreement for more details
+-->
+
+
+<Project DefaultTargets = "NativeInfo" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+
+
+  <!-- 
+  ************************************************************************************************************************
+                                              Include External Dependencies
+  ************************************************************************************************************************
+  -->
+
+  <UsingTask AssemblyFile="$(BuilderTasksPath)\halwayiTasks.dll" TaskName="xC32Build"/>
+  
+  
+  
+  
+  
+   
+
+  <!--
+  ************************************************************************************************************************
+                                                     Public Targets
+  ************************************************************************************************************************
+  -->
+
+  <Target Name="NativeBuild" >
+    <xC32Build SourceFiles="@(NativeCompile)" ArtifactsFolder="$(NativeIntDir)" BinFolder="$(OutDir)" 
+              IncludePaths="@(NativeIncludedPathsItem)" OutputName="$(OutputName)" CreateExecutable="true" 
+              DebugBuild="$(DebugBuild)" PreprocessorDirectives="$(Directives)" Processor="$(NativeProcessor)" 
+              PossibleToolChainRootPaths="$(ToolChainPath)" 
+              ToolBinariesTimeoutPeriod="$(ToolChainTimeoutPeriod)" MaximumParallelRuns="$(CoresUsage)"
+              ProjectRoot="$(ProjectRoot)" LinkerArgs="$(NativeLinkerArgs)" CompilerArgs="$(NativeCompilerArgs)" />
+  </Target>
+
+
+</Project>

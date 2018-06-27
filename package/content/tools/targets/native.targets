@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+Copyright Bhavnit Singh Bajwa   iobajwa@gmail.com
+Please refer to Halwayi's license agreement for more details
+-->
+
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <PropertyGroup>
+    <DebugBuild>true</DebugBuild>
+  </PropertyGroup>
+  
+<!--
+  ************************************************************************************************************************
+                                                     Public Targets
+  ************************************************************************************************************************
+  -->
+
+  <Target Name="NativeInfo">
+    <!-- 
+          There is a possibility that Native Include Paths might change (esp. in features).
+          So, re-create the paths items.
+    -->
+    <ItemGroup>
+      <NativeIncludedPathsItem Remove="%(NativeIncludedPathsItem.Identity)"/>
+      <NativeIncludedPathsItem Include="$(NativeIncludedPaths.Split(';'))" />
+    </ItemGroup>
+  </Target>
+
+
+  <Target Name="SetupNativeBuildProperties">
+    <MakeDir Directories="$(NativeIntDir)" Condition="!Exists($(NativeIntDir))" />
+    <PropertyGroup>
+      <DebugBuild Condition=" '$(SelectedConfiguration)' == 'Release' ">false</DebugBuild>
+    </PropertyGroup>
+    <Message Text="Debug Building Enabled: $(DebugBuild)" Importance="normal" />
+  </Target>
+
+
+  <Target Name="NativeBuild" >
+    <Error Text="Override the NativeBuild target for the '$(NativeToolChain)' tool chain." />
+  </Target>
+
+  <Target Name="NativeIdeBuild" Condition="'$(BuildIDE)' == 'true'">
+    <Error Text="Building IDE project for '$(NativeToolChain)' tool chain are not supported as of now." />
+  </Target>
+
+
+</Project>

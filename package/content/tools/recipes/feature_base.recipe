@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!-- 
+	************************************************************************************************************************
+																						      Feature Base
+																							
+    Provides a simplified base class for new features to build upon.
+
+    The user simply needs to extend this file in a feature file and provide two targets: 
+      
+      FeatureProperties: Used to initialize properties (search paths, feature source, etc.) for this feature. The user
+                          can extend the paths using the 'PreXXX' 'PostXXX' properties.
+
+      FeatureFiles: Used to determine source files that must be included in this feature. User needs to provide 
+                     'CustomNativeFiles' and 'CustomGhostFiles' items.
+    
+	************************************************************************************************************************
+	-->
+
+
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+
+  <Import Project="$(BuiltInRecipes)\override_source_files.recipe"/>
+  <Import Project="$(BuiltInRecipes)\append_paths.recipe"/>
+  <Import Project="$(TargetsToolPath)\cstub.targets"/>
+
+  <UsingTask AssemblyFile= "$(BuilderTasksPath)\halwayiTasks.dll" TaskName= "FindIncludedFilesTask" />
+
+
+
+  <!--
+  ************************************************************************************************************************
+                                                      Targets
+  ************************************************************************************************************************
+  -->
+  <Target Name= "__CreateFeatureDependencies"
+          AfterTargets= "_BeforeFindingSourceFiles"
+          DependsOnTargets= "FeatureFiles;
+                            _ReadFeatureFileContents;
+                            _ParseIncludedFiles;
+                            _SetupPropertiesForcstub;
+                            _GenerateStubsForFeature;
+                            _InjectGeneratedFilesAndPaths;">
+  </Target>
+
+  <Target Name= "FeaturePropertiesLauncher" AfterTargets= "_BeforeBuild" DependsOnTargets="FeatureProperties" />
+
+
+
+  <Target Name="_SetupPropertiesForcstub">
+    <PropertyGroup>
+      <CStubGhostRoot>$(VariantArtificatFolderRoot)\Ghost\stubs\</CStubGhostRoot>
+      <CStubNativeRoot>$(VariantArtificatFolderRoot)\$(_NativeToolChain)\stubs</CStubNativeRoot>
+      <BuildGhostAlso>$(BuildGhostAsWell)</BuildGhostAlso>
+      <BuildNativeAlso>$(BuildNativeAsWell)</BuildNativeAlso>
+      <TestFileFullname>$(FeatureSource)</TestFileFullname>
+    </PropertyGroup>
+    <ItemGroup>
+      <GhostIncludedPathsItem Include="@(_GhostAllIncludedPathItem)"/>
+    </ItemGroup>
+    <MakeDir Directories="$(CStubGhostRoot)" />
+    <MakeDir Directories="$(CStubNativeRoot)" />
+  </Target>
+
+  <Target Name="_ReadFeatureFileContents" Condition="Exists($(FeatureSource))">
+    <PropertyGroup>
+      <FeatureSource>$(FeatureSource.Trim())</FeatureSource>
+      <FeatureSource>$(FeatureSource.Trim('\r'))</FeatureSource>
+      <FeatureSource>$(FeatureSource.Trim('\t'))</FeatureSource>
+      <FeatureSource>$(FeatureSource.Trim('\n'))</FeatureSource>
+      <FeatureFileContents>$([System.IO.File]::ReadAllText($(FeatureSource)))</FeatureFileContents>
+    </PropertyGroup>
+  </Target>
+
+  <Target Name="_ParseIncludedFiles" Condition="Exists($(FeatureSource))">
+    <FindIncludedFilesTask FileContents="$(FeatureFileContents)">
+      <Output ItemName= "IncludedFilesItem" TaskParameter= "DetectedFiles" />
+    </FindIncludedFilesTask>
+  </Target>
+
+  <Target Name="_GenerateStubsForFeature" Condition="Exists($(FeatureSource))" DependsOnTargets= "_GenerateAnyRequiredStubs;_GenerateStubSetupFiles" />
+  <Target Name="_GenerateStubSetupFiles" DependsOnTargets= "_GenerateStubSetupFilesForGhost;_GenerateStubSetupFilesForNative" />
+
+  <Target Name="_GenerateStubSetupFilesForGhost" Condition= " '$(BuildGhostAsWell)' == 'True' " Inputs="$(FeatureSource)" Outputs="$(CStubGhostRoot)\$(CStubManagementFile)">
+    <ItemGroup>
+      <GeneratedStubFilesGhost Include= "$(CStubGhostRoot)\**\$(StubPrefix)*.c" />
+    </ItemGroup>
+    <StubManagementGeneratorTask GeneratedFiles="@(GeneratedStubFilesGhost)" BasePath="$(CStubGhostRoot)" OutputFile="$(CStubGhostRoot)\$(CStubManagementFile)" />
+  </Target>
+
+  <Target Name="_GenerateStubSetupFilesForNative" Condition= "$(BuildNativeAsWell) == 'True'" Inputs="$(FeatureSource)" Outputs="$(CStubNativeRoot)\$(CStubManagementFile)">
+    <ItemGroup>
+      <GeneratedStubFilesNative Include= "$(CStubNativeRoot)\**\$(StubPrefix)*.c" />
+    </ItemGroup>
+    <StubManagementGeneratorTask GeneratedFiles="@(GeneratedStubFilesNative)" BasePath="$(CStubNativeRoot)" OutputFile="$(CStubNativeRoot)\$(CStubManagementFile)" />
+  </Target>
+
+
+
+  <Target Name="_InjectGeneratedFilesAndPaths">
+    <ItemGroup>
+      <CustomGhostFiles Include="$(CStubGhostRoot)\**\*.c" />
+      <CustomNativeFiles Include="$(CStubNativeRoot)\**\*.c" />
+    </ItemGroup>
+    <PropertyGroup>
+      <_AllGhostIncludedPaths>$(CStubGhostRoot);$(_AllGhostIncludedPaths)</_AllGhostIncludedPaths>
+      <_AllNativeIncludedPaths>$(CStubNativeRoot);$(_AllNativeIncludedPaths)</_AllNativeIncludedPaths>
+    </PropertyGroup>
+  </Target>
+
+
+</Project>

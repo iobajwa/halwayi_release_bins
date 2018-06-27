@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+Copyright Bhavnit Singh Bajwa   iobajwa@gmail.com
+Please refer to Halwayi's license agreement for more details
+-->
+
+<Project DefaultTargets = "GhostInfo" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+
+  <Import Project="$(MSBuildThisFileDirectory)\..\..\default.properties" Condition="'$(ReleaseBuild)' == 'true'"/>
+
+  <UsingTask AssemblyFile="$(BuilderTasksPath)\halwayiTasks.dll" TaskName="GCCBuild"/>
+  <UsingTask AssemblyFile="$(BuilderTasksPath)\halwayiTasks.dll" TaskName="ToolchainDiscoveryTask"/>
+
+
+  <PropertyGroup>
+    <_SelectedConfiguration>Debug</_SelectedConfiguration>
+  </PropertyGroup>
+
+  
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalOptions></AdditionalOptions>
+       <!--<MultiProcessorCompilation>true</MultiProcessorCompilation>--> 
+    </ClCompile>
+  </ItemDefinitionGroup>
+
+  
+  <Target Name = "GhostInfo">
+    <Message Text="Include Paths : $(IncludePath)" Importance="normal"/>
+    <Message Text="Exec Name     : $(TargetName)" Importance="normal"/>
+    <Message Text="Output Dir    : $(OutDir)" Importance="normal"/>
+    <Message Text="Artifact Dir  : $(IntDir)" Importance="normal"/>
+    <Message Text="Directives    : %(ClCompile.AdditionalOptions)" Importance="normal" />
+    <Message Text="Source Files  : " Importance="normal"/>
+    <Message Text="                %(CLCompile.Identity)" Importance="normal"/>
+  </Target>
+
+
+  <Target Name="SetupGhostBuildProperties">
+    <PropertyGroup Condition="'$(GhostToolchain)' == 'gcc'">
+      <IncludePath>$(Paths)</IncludePath>
+    </PropertyGroup>
+    <PropertyGroup>
+      <IncludePath>$(GhostIncludedPaths);$(IncludePath)</IncludePath>
+      <Configuration>$(_SelectedConfiguration)</Configuration>
+      <Platform>Win32</Platform>
+      <GhostIntDir>$(IntDir)</GhostIntDir>
+      <DebugBuild>true</DebugBuild>
+      <GhostProcessor>dummy</GhostProcessor>
+      <ToolChainPath>dummy</ToolChainPath>
+    </PropertyGroup>
+
+    <ToolchainDiscoveryTask CPU="gcc" Toolchains="@(Toolchains)">
+      <Output PropertyName="ToolChainPath" TaskParameter="ToolChainPaths" />
+    </ToolchainDiscoveryTask>
+  </Target>
+
+  <Target Name="GhostBuild" >
+    <!-- <Message Text="SourceFiles=@(ClCompile)" />
+    <Message Text="ArtifactsFolder=$(GhostIntDir)" />
+    <Message Text="BinFolder=$(OutDir)" />
+    <Message Text="IncludePaths=$(IncludePath)" />
+    <Message Text="OutputName=$(OutputName)" />
+    <Message Text="CreateExecutable=true"  />
+    <Message Text="DebugBuild=$(DebugBuild)" />
+    <Message Text="PreprocessorDirectives=$(Directives)" />
+    <Message Text="Processor=$(GhostProcessor)" />
+    <Message Text="PossibleToolChainRootPaths=$(ToolChainPath)" />
+    <Message Text="ToolBinariesTimeoutPeriod=$(ToolChainTimeoutPeriod)" />
+    <Message Text="MaximumParallelRuns=$(CoresUsage)" />
+    <Error Text="kaboom!" /> -->
+    <GCCBuild SourceFiles="@(ClCompile)" ArtifactsFolder="$(GhostIntDir)" BinFolder="$(OutDir)" 
+              IncludePaths="$(IncludePath)" OutputName="$(OutputName)" CreateExecutable="true" 
+              DebugBuild="$(DebugBuild)" PreprocessorDirectives="$(Directives)" Processor="$(GhostProcessor)" 
+              PossibleToolChainRootPaths="$(ToolChainPath)" 
+              ToolBinariesTimeoutPeriod="$(ToolChainTimeoutPeriod)" MaximumParallelRuns="$(CoresUsage)"
+              ProjectRoot="$(ProjectRoot)"
+              LinkerArgs="$(GhostLinkerArgs)"/>
+  </Target>
+
+  <Target Name="GhostBuildAll" DependsOnTargets="GhostBuild">
+  </Target>
+
+
+  <Target Name="_PerformPreSetupSteps" />
+
+  
+</Project>

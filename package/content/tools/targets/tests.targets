@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+Copyright Bhavnit Singh Bajwa   iobajwa@gmail.com
+Please refer to Halwayi's license agreement for more details
+-->
+
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+
+  <!-- 
+  ************************************************************************************************************************
+                                                  Public Properties
+  ************************************************************************************************************************
+  -->
+  
+  <PropertyGroup>
+    <TestArtifactFolder></TestArtifactFolder>
+    <TestBinFolder></TestBinFolder>
+    <TestFile></TestFile>
+    <OutputName></OutputName>
+    <NativeIncludedPaths></NativeIncludedPaths>
+    <GhostIncludedPaths></GhostIncludedPaths>
+    <Directives></Directives>
+    <GhostLinkFile></GhostLinkFile>
+    <NativeLinkFile></NativeLinkFile>
+    
+    <BuildNative>false</BuildNative>
+    <BuildGhost>true</BuildGhost>
+    <NativeMain></NativeMain>
+    <NativeProcessor></NativeProcessor>
+    <ProjectPropertySheet></ProjectPropertySheet>
+    <NativeToolChain></NativeToolChain>
+    <ToolChainPath></ToolChainPath>
+
+    <GhostPlatformLabel>Ghost</GhostPlatformLabel>
+    <GhostTargetsFile>$(GhostPlatformLabel).targets</GhostTargetsFile>
+    <__GhostSupportFolders></__GhostSupportFolders>
+    <__DefaultPropertyFile></__DefaultPropertyFile>
+    <Platform></Platform>
+    <ToolChainTimeoutPeriod></ToolChainTimeoutPeriod>
+  </PropertyGroup>
+
+
+
+  <PropertyGroup>
+    <TargetName>$(OutputName)</TargetName>
+    <OutDir>$(TestBinFolder)</OutDir>
+    <IntDir>$(TestArtifactFolder)ghost\</IntDir>
+    <NativeIntDir>$(TestArtifactFolder)$(NativeToolChain)\</NativeIntDir>
+  </PropertyGroup>
+
+
+
+  <!-- 
+  ************************************************************************************************************************
+                                              Include External Dependencies
+  ************************************************************************************************************************
+  -->
+  
+  <Import Project="$(__DefaultPropertyFile)" />
+  <Import Project="$(ProjectPropertySheet)" />
+  <Import Project="$(TargetsToolPath)\ghostgcc.targets" Condition=" '$(BuildGhost)' == 'true' AND '$(GhostToolchain)' == 'gcc' "/>
+  <Import Project="$(TargetsToolPath)\ghostvcc.targets" Condition=" '$(BuildGhost)' == 'true' AND '$(GhostToolchain)' != 'gcc' "/>
+  <Import Project="$(GhostLinkFile)" Condition="Exists($(GhostLinkFile))"/>
+  <Import Project="$(NativeLinkFile)" Condition="Exists($(NativeLinkFile))"/>
+  <Import Project="$(TargetsToolPath)\native.targets" Condition=" '$(BuildNative)' == 'true' "/>
+  <Import Project="$(TargetsToolPath)\$(NativeToolChain).targets" Condition=" '$(BuildNative)' == 'true' "/>
+
+  <UsingTask AssemblyFile="$(BuilderTasksPath)\halwayiTasks.dll" TaskName="GhostAdditionalDirectivesBuilder" />
+  
+  
+  
+  
+
+
+
+
+
+  
+  <!--
+  ************************************************************************************************************************
+                                                     Public Targets
+  ************************************************************************************************************************
+  -->
+
+
+  <Target Name="Test__BuildTestFile" DependsOnTargets="_CheckProperties;_TransposeDirectives;_CreatePathList;GhostTargets;NativeTargets">
+  </Target>
+
+
+  <!--Inputs="@(ClCompile)" Outputs="$(GhostOutputExecutable)"-->
+
+  <Target Name="GhostTargets" DependsOnTargets="_InjectGhostMain;SetupGhostBuildProperties;GhostInfo;GhostBuild;_DejectGhostMain" Condition=" '$(BuildGhost)' == 'true' " />
+  <Target Name="NativeTargets" DependsOnTargets="_InjectNativeMain;SetupNativeBuildProperties;NativeInfo;NativeBuild" Condition=" '$(BuildNative)' == 'true' " />
+  
+  
+  
+  
+  
+  
+  <!--
+  ************************************************************************************************************************
+                                                     Internal Targets
+  ************************************************************************************************************************
+  -->
+
+  <Target Name="_InjectGhostMain">
+    <ItemGroup>
+      <ClCompile Include="$(DefaultBuilderGhostSupportFolders)\ghostmain.c"/>
+    </ItemGroup>
+  </Target>
+
+  <Target Name="_DejectGhostMain">
+    <ItemGroup>
+      <ClCompile Remove="$(DefaultBuilderGhostSupportFolders)\ghostmain.c"/>
+    </ItemGroup>
+  </Target>
+
+  <Target Name="_InjectNativeMain">
+    <ItemGroup>
+      <NativeCompile Include="$(NativeMain)"/>
+    </ItemGroup>
+  </Target>
+
+  <Target Name="_CreatePathList">
+    <PropertyGroup>
+      <_PathTemp>$(NativeIncludedPaths.Replace("\;", "\;"))</_PathTemp>
+    </PropertyGroup>
+    <ItemGroup>
+      <NativeIncludedPathsItem Include ="$(_PathTemp.Split(';'))"/>
+    </ItemGroup>
+  </Target>
+
+
+  
+
+  <Target Name="_CheckProperties">
+    <Error Text="Artifacts Folder for test file does not exists" Condition="!Exists($(TestArtifactFolder))" />
+    <Error Text="Bin Folder for Tests does not exists" Condition="!Exists($(TestBinFolder))" />
+    <Error Text="GhostLinkFile '$(GhostLinkFile)' does not exists" Condition=" !Exists($(GhostLinkFile)) AND '$(BuildGhost)' == 'true' " />
+    <Error Text="NativeLinkFile '$(NativeLinkFile)' does not exists" Condition=" !Exists($(NativeLinkFile)) AND '$(BuildNative)' == 'true' " />
+    <Error Text="Test File '$(TestFile) does not exists " Condition=" !Exists($(TestFile)) " />
+    <Error Text="Output name not provided" Condition=" '$([System.String]::IsNullOrWhiteSpace($(OutputName)))' == 'true' "  />
+    <Error Text="Project Properties Sheet '$(ProjectPropertySheet)' does not exist" Condition=" !Exists($(ProjectPropertySheet)) " />
+    <Error Text="Native Tool Chain not provided" Condition=" '$([System.String]::IsNullOrWhiteSpace($(NativeToolChain)))' == 'true' "  />
+  </Target>
+
+  <Target Name="_TransposeDirectives">
+    <PropertyGroup>
+      <Directives>$(Directives.Replace(' ', '='))</Directives>
+    </PropertyGroup>
+
+    <GhostAdditionalDirectivesBuilder Directives="$(Directives)">
+      <Output PropertyName="AddDirTemp" TaskParameter="FormedAdditionalDirectives" />
+      <Output PropertyName="Directives" TaskParameter="ProcessedOutput" />
+    </GhostAdditionalDirectivesBuilder>
+
+    <ItemGroup Condition=" '$(BuildGhost)' == 'true' ">
+      <ClCompile>
+        <AdditionalOptions>$(AddDirTemp) %(AdditionalOptions)</AdditionalOptions>
+      </ClCompile>
+    </ItemGroup>
+  </Target>
+
+
+</Project>
+

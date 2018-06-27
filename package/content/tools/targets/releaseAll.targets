@@ -1,0 +1,570 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+Copyright Bhavnit Singh Bajwa   iobajwa@gmail.com
+Please refer to Halwayi's license agreement for more details
+-->
+
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+
+	<!-- 
+	************************************************************************************************************************
+																							Declare Properties and Items
+	************************************************************************************************************************
+	-->
+	<PropertyGroup>
+		<!-- Public Properties -->
+		<ProjectFile></ProjectFile>
+		<DefaultPropertyFile></DefaultPropertyFile>
+		<BuildNativeAsWell>false</BuildNativeAsWell>
+		<BuildGhostAsWell>true</BuildGhostAsWell>
+		<SelectedConfiguration>Release</SelectedConfiguration>
+		<BuildFeature></BuildFeature>
+		<FeatureName></FeatureName>
+		<FeatureCFile></FeatureCFile>
+		<ActivePlatformLabel></ActivePlatformLabel>
+		<NativeLabel></NativeLabel>
+		<NativeToolLabel></NativeToolLabel>
+		<GhostLabel></GhostLabel>
+		<ToolChainPath></ToolChainPath>
+		<ToolChainTimeoutPeriod></ToolChainTimeoutPeriod>
+		<IdeFolderRoot></IdeFolderRoot>
+		<BuildIDE>false</BuildIDE>
+
+		<!-- Variant information -->
+		<_VariantName></_VariantName>
+		<_VariantSwitch></_VariantSwitch>
+		<NativeCPU></NativeCPU>
+		<ReleaseDefines></ReleaseDefines>
+		<NativeLinkerArgs></NativeLinkerArgs>
+		<NativeCompilerArgs></NativeCompilerArgs>
+		<VariantIdeFolder></VariantIdeFolder>
+
+		<ArtifactsFolderRoot></ArtifactsFolderRoot>
+		<BinFolderRoot></BinFolderRoot>
+		
+		<_NativeToolChain></_NativeToolChain>
+
+		<!-- Paths -->
+		<_GhostSourceFolders></_GhostSourceFolders>
+		<_NativeSourceFolders></_NativeSourceFolders>
+		<_SourceFolders></_SourceFolders>
+		<_IncludeFolders></_IncludeFolders>
+
+		<_AllNativeIncludedPaths></_AllNativeIncludedPaths>
+		<_AllGhostIncludedPaths></_AllGhostIncludedPaths>
+
+		<ToolScriptsFolders></ToolScriptsFolders>
+		<AutoCodeRoot>$(ArtifactsFolderRoot)\auto\$(_VariantName)\code\source</AutoCodeRoot>
+		
+		<!-- Output -->
+		<TargetName></TargetName>
+		<NativeIntDir></NativeIntDir>
+		<PlatformName></PlatformName>
+  </PropertyGroup>
+
+
+
+
+
+
+
+	<!-- 
+	************************************************************************************************************************
+																							Include External Dependencies
+	************************************************************************************************************************
+	-->
+	<Import Project= "$(DefaultPropertyFile)" />
+	<Import Project= "$(ProjectFile)" />
+	<Import Project= "$(TargetsToolPath)\native.targets" Condition= " '$(BuildNativeAsWell)' == 'true' "/>
+	<Import Project= "$(TargetsToolPath)\$(_NativeToolChain).targets" Condition= " '$(BuildNativeAsWell)' == 'true' "/>
+
+	<UsingTask AssemblyFile= "$(BuilderTasksPath)\halwayiTasks.dll" TaskName= "RelativeToAbsolutePathsTask" />
+	<UsingTask AssemblyFile= "$(BuilderTasksPath)\halwayiTasks.dll" TaskName= "LinkFileCreationTask" />
+	<UsingTask AssemblyFile= "$(BuilderTasksPath)\halwayiTasks.dll" TaskName= "TransformDefinesTask" />
+	<UsingTask AssemblyFile= "$(BuilderTasksPath)\halwayiTasks.dll" TaskName= "MetadataValueParserTask" />
+
+
+
+
+
+
+
+
+
+
+  <!--
+	************************************************************************************************************************
+																										 Public Targets
+	************************************************************************************************************************
+	-->
+
+	<Target Name= "BuildAll" DependsOnTargets= " 	_SanityCheck_BuildAll;
+													_SetupLabels;
+													_CreateBinAndArtifactFolders;
+													_CreateVariantProperties;
+													_CreateIdeProperties; 
+													_CreateArtifactFolderForThisVariant;
+													_CreateBinFolderForThisVariant;
+													_BeforeBuild;
+													_BuildPathItems;
+													_CheckPaths;
+													_CreateIncludePathList; 
+													_BeforeFindingSourceFiles;
+													_CreateSourceFileLists;
+													_TestIfNoSourceFound;
+													_AfterFindingSourceFiles;
+													_TransposeDefines;
+													_BeforeSetup;
+													_SetupBuildAllProperties;
+													_AfterSetup;
+													_BuildGhostExe;
+													_BuildNativeExe;
+													_AfterBuild;">
+	</Target>
+
+
+
+	<Target Name= "CleanAll" DependsOnTargets= "_SetupBinAndArtifactFolders;
+												_SetupLabels;
+												_CreateVariantProperties;
+												_CreateIdeProperties;
+												_BeforeClean;
+												_BeforeCleanGhost;
+												_CleanGhost;
+												_AfterCleanGhost;
+												_BeforeCleanNative;
+												_CleanNative;
+												_CleanIDE;
+												_AfterCleanNative;
+												_AfterClean">
+		<!-- 
+				Nothing special needs to be done here because the caller is going to remove the root directory which
+				will automatically clean the reminents.
+		-->
+	</Target>
+
+
+  <Target Name="_CleanGhost" Condition= " '$(BuildGhostAsWell)' == 'true' ">
+    <RemoveDir Directories= "$(VariantArtificatFolderRoot)\ghost" />
+    <RemoveDir Directories= "$(VariantBinFolderRoot)\ghost" />
+    <Message Text= "Deleted '$(VariantArtificatFolderRoot)\ghost' " Importance= "high" />
+    <Message Text= "Deleted '$(VariantBinFolderRoot)\ghost' " Importance= "high" />
+  </Target>
+
+  <Target Name="_CleanNative" Condition= " '$(BuildNativeAsWell)' == 'true' " >
+    <RemoveDir Directories= "$(VariantArtificatFolderRoot)\$(_NativeToolChain)" />
+    <RemoveDir Directories= "$(VariantBinFolderRoot)\$(_NativeToolChain)" />
+    <Message Text= "Deleted '$(VariantArtificatFolderRoot)\$(_NativeToolChain)' " Importance= "high" />
+    <Message Text= "Deleted '$(VariantBinFolderRoot)\$(_NativeToolChain)' " Importance= "high" />
+  </Target>
+
+  <Target Name="_CleanIDE" Condition= " '$(BuildNativeAsWell)' == 'true' " >
+  	<RemoveDir Directories= "$(IdeFolder)" />
+    <Message Text= "Deleted '$(IdeFolder)'" Importance= "high" />
+  </Target>
+
+  <Target Name="_BeforeClean" />
+  <Target Name="_BeforeCleanGhost" />
+  <Target Name="_BeforeCleanNative" />
+  <Target Name="_AfterCleanGhost" />
+  <Target Name="_AfterCleanNative" />
+  <Target Name="_AfterClean" />
+
+  
+
+
+
+
+  <!--
+	************************************************************************************************************************
+																										 Internal Targets
+	************************************************************************************************************************
+	-->
+
+	<!-- ========================================
+			'BuildAll' private helper targets 
+	========================================= -->
+
+	<Target Name= "_SanityCheck_BuildAll" DependsOnTargets="_SanityCheck_ProjectProperties;_SanityCheck_VariantProperties" />
+
+	<Target Name="_SetupLabels">
+		<PropertyGroup Condition=" '$(BuildNativeAsWell)' == 'true' ">
+			<NativeLabel>_native</NativeLabel>
+			<NativeToolLabel>_native_$(_NativeToolChain.ToLower())</NativeToolLabel>
+			<ActivePlatformLabel>_native</ActivePlatformLabel>
+		</PropertyGroup>
+		<PropertyGroup Condition=" '$(BuildGhostAsWell)' == 'true' ">
+			<GhostLabel>_ghost</GhostLabel>
+			<ActivePlatformLabel>_ghost</ActivePlatformLabel>
+		</PropertyGroup>
+	</Target>
+
+  <Target Name="_CreateBinAndArtifactFolders" DependsOnTargets="_SetupBinAndArtifactFolders">
+    <MakeDir Directories="$(BinFolderRoot)"/>
+    <MakeDir Directories="$(ArtifactsFolderRoot)"/>
+    <MakeDir Directories="$(AutoCodeRoot)" />
+	<MakeDir Directories="$(AutoToolScriptsRoot)" />
+  </Target>
+  
+  <Target Name="_SetupBinAndArtifactFolders">
+  	<PropertyGroup>
+		<!-- <AutoCodeRoot>$(ArtifactsFolderRoot)\auto\$(_VariantName)\code\source</AutoCodeRoot> -->
+		<AutoToolScriptsRoot>$(ArtifactsFolderRoot)\auto\$(_VariantName)\tool_scripts\</AutoToolScriptsRoot>
+	</PropertyGroup>
+    <PropertyGroup Condition="$([System.String]::IsNullOrEmpty('$(FeatureName)')) == 'false'">
+      <ArtifactsFolderRoot>$(ArtifactsFolderRoot)\features\$(FeatureName)\$(SelectedConfiguration)</ArtifactsFolderRoot>
+      <BinFolderRoot>$(BinFolderRoot)\features\$(FeatureName)\$(SelectedConfiguration)</BinFolderRoot>
+    </PropertyGroup>
+    <PropertyGroup Condition="$([System.String]::IsNullOrEmpty('$(FeatureName)')) == 'true'">
+      <ArtifactsFolderRoot>$(ArtifactsFolderRoot)\features\$(FinalFeatureName)\$(SelectedConfiguration)</ArtifactsFolderRoot>
+      <BinFolderRoot>$(BinFolderRoot)\features\$(FinalFeatureName)\$(SelectedConfiguration)</BinFolderRoot>
+    </PropertyGroup>
+  </Target>
+
+	<Target Name= "_BuildGhostExe" DependsOnTargets= "_CreateGhostArtifactAndBinFolders;_CreateGhostLinkFile;" Condition= " '$(BuildGhostAsWell)' == 'true' ">
+		
+		<MSBuild Projects= "$(TargetsToolPath)\releaseGhostWrapper.targets"
+						 Properties= "TargetName = $(TargetName); OutDir = $(GhostBinFolder); IntDir = $(GhostArtifactFolder);
+													 Directives = $(ReleaseDefines); Paths = $(_AllGhostIncludedPaths);
+													 TargetsToolPath = $(TargetsToolPath); BuilderTasksPath = $(BuilderTasksPath);
+													 GhostLinkFile = $(GhostLinkFile); _SelectedConfiguration = $(SelectedConfiguration);
+													 OutputName=$(OutputName);
+													"
+						 Targets= "GhostReleaseAll" />
+	</Target>
+
+	
+	<Target Name= "_BuildNativeExe" DependsOnTargets="_CreateNativeArtifactAndBinFolders;_CreateNativeLinkFile;SetupNativeBuildProperties;NativeInfo;NativeBuild;NativeIdeBuild" Condition= " '$(BuildNativeAsWell)' == 'true' " />
+
+
+
+	
+	
+	
+	<!-- ========================================
+			Targets shared by multiple Public Targets
+	========================================= -->
+
+	
+	<!-- Sanity checks -->
+	<Target Name= "_SanityCheck_ProjectProperties">
+		<Error Text= "Project Name not provided" Condition= " '$([System.String]::IsNullOrWhiteSpace($(ProjectName)))' == 'true' "  />
+	</Target>
+	
+	<Target Name= "_SanityCheck_VariantProperties">
+		<Error Text= "_VariantName not provided" Condition= " '$([System.String]::IsNullOrWhiteSpace($(_VariantName)))' == 'true' "  />
+		<Error Text= "_VariantSwitch not provided" Condition= " '$([System.String]::IsNullOrWhiteSpace($(_VariantSwitch)))' == 'true' " />
+
+		<Error Text="Artifacts root folder not specified" Condition=" $([System.String]::IsNullOrWhiteSpace($(ArtifactsFolderRoot))) "></Error>
+		<Error Text="Binary root folder not specified" Condition=" $([System.String]::IsNullOrWhiteSpace($(BinFolderRoot))) "></Error>
+	</Target>
+
+	<Target Name="_TestIfNoSourceFound">
+		<Error Text= "No source Files (ghost) found." Condition= " !Exists(%(ClCompile.Identity)) AND '$(BuildGhostAsWell)' == 'true'" />
+		<Error Text= "No source Files (native) found." Condition= " !Exists(%(NativeCompile.Identity)) AND '$(BuildNativeAsWell)' == 'true'" />
+	</Target>
+
+
+	
+	<!-- Create paths list and verifies paths -->
+	<Target Name= "_BuildPathItems">
+		<PropertyGroup>
+			<_NativeSourceFolders>$(_NativeSourceFolders)</_NativeSourceFolders>
+			<_GhostSourceFolders>$(_GhostSourceFolders)</_GhostSourceFolders>
+		</PropertyGroup>
+		<ItemGroup>
+			<NativeSourceFolders Include= "$(_NativeSourceFolders)" />
+			<GhostSourceFolders Include= "$(_GhostSourceFolders)" />
+			<SourceFoldersItem Include= "$(_SourceFolders)" />
+			<IncludeFoldersItem Include= "$(_IncludeFolders)" />
+			<ToolScriptsFoldersItems Include= "$(ToolScriptsFolders)" />
+		</ItemGroup>
+
+		<!-- Convert any relative paths to abosute paths -->
+		<RelativeToAbsolutePathsTask PathsToCheck= "@(NativeSourceFolders)" Root= "$(MSBuildStartupDirectory)">
+			<Output ItemName= "__Temp1" TaskParameter= "ConvertedPathsItem" />
+		</RelativeToAbsolutePathsTask>
+		<ItemGroup>
+			<NativeSourceFolders Remove="%(NativeSourceFolders.Identity)" />
+			<NativeSourceFolders Include="%(__Temp1.Identity)" />
+		</ItemGroup>
+
+		<RelativeToAbsolutePathsTask PathsToCheck= "@(GhostSourceFolders)" Root= "$(MSBuildStartupDirectory)">
+			<Output ItemName= "__Temp2" TaskParameter= "ConvertedPathsItem" />
+		</RelativeToAbsolutePathsTask>
+		<ItemGroup>
+			<GhostSourceFolders Remove="%(GhostSourceFolders.Identity)" />
+			<GhostSourceFolders Include="%(__Temp2.Identity)" />
+		</ItemGroup>
+		
+		<RelativeToAbsolutePathsTask PathsToCheck= "@(SourceFoldersItem)" Root= "$(MSBuildStartupDirectory)">
+			<Output ItemName= "__Temp3" TaskParameter= "ConvertedPathsItem" />
+		</RelativeToAbsolutePathsTask>
+		<ItemGroup>
+			<SourceFoldersItem Remove="%(SourceFoldersItem.Identity)" />
+			<SourceFoldersItem Include="%(__Temp3.Identity)" />
+		</ItemGroup>
+
+		<RelativeToAbsolutePathsTask PathsToCheck= "@(IncludeFoldersItem)" Root= "$(MSBuildStartupDirectory)">
+			<Output ItemName= "__Temp4" TaskParameter= "ConvertedPathsItem" />
+		</RelativeToAbsolutePathsTask>
+		<ItemGroup>
+			<IncludeFoldersItem Remove="%(IncludeFoldersItem.Identity)" />
+			<IncludeFoldersItem Include="%(__Temp4.Identity)" />
+		</ItemGroup>
+
+		<RelativeToAbsolutePathsTask PathsToCheck="@(ToolScriptsFoldersItems)" Root="$(ProjectRoot)">
+			<Output ItemName="__Temp5" TaskParameter="ConvertedPathsItem" />
+		</RelativeToAbsolutePathsTask>
+		<ItemGroup>
+			<ToolScriptsFoldersItems Remove="%(ToolScriptsFoldersItems.Identity)" />
+			<ToolScriptsFoldersItems Include="%(__Temp5.Identity)" />
+		</ItemGroup>
+
+		<PropertyGroup>
+			<ToolScriptsFolders>@(ToolScriptsFoldersItems)</ToolScriptsFolders>
+		</PropertyGroup>
+
+		<!-- Create NativeIncludedPathsItem which will be used to search NativeMain.c among other things. -->
+		<ItemGroup>
+			<!-- Folder preference order:
+						- Native Source Folders
+						- Source Folders
+						- Include Folders
+			-->
+			<NativeIncludedPathsItem Include= "@(NativeSourceFolders)" />
+			<NativeIncludedPathsItem Include= "@(SourceFoldersItem)" />
+			<NativeIncludedPathsItem Include= "@(IncludeFoldersItem)" />
+
+			<_GhostAllIncludedPathItem Include= "@(GhostSourceFolders) "/>
+			<_GhostAllIncludedPathItem Include= "@(SourceFoldersItem)" />
+			<_GhostAllIncludedPathItem Include= "@(IncludeFoldersItem)" />
+		</ItemGroup>
+
+	</Target>
+
+	<Target Name= "_CheckPaths" DependsOnTargets= "_CheckSourceFolders;_CheckIncludeFolders;_CheckGhostSourceFolders;_CheckNativeSourceFolders">
+	</Target>
+
+	<Target Name= "_CheckSourceFolders" Outputs= "%(SourceFoldersItem.Identity)" Condition= " '$(_SourceFolders)' != '' ">
+		<Error Text= "Source Path '%(SourceFoldersItem.Identity)' does not exists." Condition= "!Exists(%(SourceFoldersItem.Identity)) AND $([System.String]::IsNullOrEmpty('%(SourceFoldersItem.Identity)')) == 'false'" />
+	</Target>
+
+	<Target Name= "_CheckIncludeFolders" Outputs= "%(IncludeFoldersItem.Identity)" Condition= " '$(_IncludeFolders)' != '' ">
+		<Error Text= "Include Path '%(IncludeFoldersItem.Identity)' does not exists." Condition= "!Exists(%(IncludeFoldersItem.Identity)) AND $([System.String]::IsNullOrEmpty('%(IncludeFoldersItem.Identity)')) == 'false'" />
+	</Target>
+
+	<Target Name= "_CheckGhostSourceFolders" Outputs= "%(GhostSourceFoldersItem.Identity)" Condition= " '$(_GhostSourceFolders)' != '' ">
+		<Error Text= "Ghost Source Path '%(GhostSourceFoldersItem.Identity)' does not exists." Condition= "!Exists(%(GhostSourceFoldersItem.Identity)) AND $([System.String]::IsNullOrEmpty('%(GhostSourceFoldersItem.Identity)')) == 'false'" />
+	</Target>
+
+	<Target Name= "_CheckNativeSourceFolders" Outputs= "%(NativeSourceFoldersItem.Identity)" Condition= " '$(_NativeSourceFolders)' != '' ">
+		<Error Text= "Ghost Source Path '%(NativeSourceFoldersItem.Identity)' does not exists." Condition= "!Exists(%(NativeSourceFoldersItem.Identity)) AND $([System.String]::IsNullOrEmpty('%(NativeSourceFoldersItem.Identity)')) == 'false'" />
+	</Target>
+
+
+
+	<!-- Creates a list of all the include paths into $(_AllNativeIncludedPaths) -->
+	<Target Name="_CreateIncludePathList">
+		<PropertyGroup>
+
+			<!-- Folder preference order:
+						- Native/Ghost Source Folder
+						- Source Folders
+						- Include Folders
+			-->
+			<_AllNativeIncludedPaths>$(_NativeSourceFolders);</_AllNativeIncludedPaths>
+			<_AllNativeIncludedPaths>$(_AllNativeIncludedPaths);$(_SourceFolders);</_AllNativeIncludedPaths>
+			<_AllNativeIncludedPaths>$(_AllNativeIncludedPaths);$(_IncludeFolders);</_AllNativeIncludedPaths>
+			<_AllNativeIncludedPaths>$(_AllNativeIncludedPaths.Trim(';'))</_AllNativeIncludedPaths>
+			<_AllNativeIncludedPaths>$(_AllNativeIncludedPaths);</_AllNativeIncludedPaths>
+			<_AllNativeIncludedPaths>$(_AllNativeIncludedPaths.Replace(";;", ";"))</_AllNativeIncludedPaths>
+			<_AllNativeIncludedPaths>$(_AllNativeIncludedPaths.Replace(";", "\;"))</_AllNativeIncludedPaths>
+			<_AllNativeIncludedPaths>$(_AllNativeIncludedPaths.Replace("\\", "\"))</_AllNativeIncludedPaths>
+			<_AllNativeIncludedPaths>$(_AllNativeIncludedPaths.Replace(";\;", ";"))</_AllNativeIncludedPaths>
+
+			<_AllGhostIncludedPaths>$(_GhostSourceFolders);</_AllGhostIncludedPaths>
+			<_AllGhostIncludedPaths>$(_AllGhostIncludedPaths);$(_SourceFolders);</_AllGhostIncludedPaths>
+			<_AllGhostIncludedPaths>$(_AllGhostIncludedPaths);$(_IncludeFolders);</_AllGhostIncludedPaths>
+			<_AllGhostIncludedPaths>$(_AllGhostIncludedPaths.Trim(';'))</_AllGhostIncludedPaths>
+			<_AllGhostIncludedPaths>$(_AllGhostIncludedPaths);</_AllGhostIncludedPaths>
+			<_AllGhostIncludedPaths>$(_AllGhostIncludedPaths.Replace(";;", ";"))</_AllGhostIncludedPaths>
+			<_AllGhostIncludedPaths>$(_AllGhostIncludedPaths.Replace(";", "\;"))</_AllGhostIncludedPaths>
+			<_AllGhostIncludedPaths>$(_AllGhostIncludedPaths.Replace("\\", "\"))</_AllGhostIncludedPaths>
+			<_AllGhostIncludedPaths>$(_AllGhostIncludedPaths.Replace(";\;", ";"))</_AllGhostIncludedPaths>
+		</PropertyGroup>
+
+		<RelativeToAbsolutePathsTask PathsToCheck= "$(_AllNativeIncludedPaths)" Root= "$(MSBuildStartupDirectory)">
+			<Output PropertyName= "_AllNativeIncludedPaths" TaskParameter= "ConvertedPaths" />
+		</RelativeToAbsolutePathsTask>
+
+		<RelativeToAbsolutePathsTask PathsToCheck= "$(_AllGhostIncludedPaths)" Root= "$(MSBuildStartupDirectory)">
+			<Output PropertyName= "_AllGhostIncludedPaths" TaskParameter= "ConvertedPaths" />
+		</RelativeToAbsolutePathsTask>
+
+		<Message Text= "_AllNativeIncludedPaths = $(_AllNativeIncludedPaths)" Importance="low" />
+		<Message Text= "_AllGhostIncludedPaths = $(_AllGhostIncludedPaths)" Importance="low" />
+
+	</Target>
+
+
+
+
+	<!-- Creates a list of all the source files to compile (separate for ghost and native) -->
+	<Target Name= "_CreateSourceFileLists" DependsOnTargets="_CreateGhostSourceFileList;_CreateNativeSourceFileList">
+	</Target>
+
+	<Target Name= "_CreateGhostSourceFileList" Outputs= "%(_GhostAllIncludedPathItem.Identity)">
+		<ItemGroup>
+			<ClCompile Include="%(_GhostAllIncludedPathItem.Identity)\*.c" Condition="Exists(%(_GhostAllIncludedPathItem.Identity))">
+				<Root>%(_GhostAllIncludedPathItem.Identity)</Root>
+				<ArtifactFolder></ArtifactFolder>
+				<BinFolder></BinFolder>
+			</ClCompile>
+		</ItemGroup>
+	</Target>
+
+	<Target Name= "_CreateNativeSourceFileList" Outputs= "%(NativeIncludedPathsItem.Identity)">
+		<ItemGroup>
+			<NativeCompile Include="%(NativeIncludedPathsItem.Identity)\*.c" Condition="Exists(%(NativeIncludedPathsItem.Identity))">
+				<Root>%(NativeIncludedPathsItem.Identity)</Root>
+				<ArtifactFolder></ArtifactFolder>
+				<BinFolder></BinFolder>
+			</NativeCompile>
+		</ItemGroup>
+	</Target>
+
+
+	<Target Name="_TransposeDefines">
+	    <TransformDefinesTask Directives="$(ReleaseDefines)" Symbol="?" Replacement="=">
+	    	<Output PropertyName= "ReleaseDefines" TaskParameter= "ProcessedOutput" />
+	    </TransformDefinesTask>
+	</Target>
+  
+	<!-- Setups properties for the build process -->
+	<Target Name= "_BeforeFindingSourceFiles" />
+	<Target Name= "_AfterFindingSourceFiles" />
+	<Target Name= "_BeforeSetup" />
+	<Target Name= "_AfterSetup" />
+	<Target Name= "_BeforeBuild" />
+	<Target Name= "_AfterBuild" />
+
+	<Target Name="_SetupBuildAllProperties" DependsOnTargets="_SetupBuildProperties">
+		<Message Text="Building using feature file: $(BuildFeature)" Importance="Normal" Condition="Exists($(BuildFeature))"/>
+    	<MakeDir Directories="$(IdeFolderRoot)" />
+    	<MakeDir Directories="$(VariantIdeFolder)" />
+    	<MakeDir Directories="$(IdeFolder)" />
+	</Target>
+	
+	<Target Name= "_SetupBuildProperties" DependsOnTargets="_SetupGhostRelatedBuildProperties;_SetupNativeRelatedBuildProperties;_ParseEncodedDefines">
+		<PropertyGroup>
+			<TargetName>$(ProjectName)</TargetName>
+			<ReleaseDefines>$(_VariantSwitch);$(ReleaseDefines)</ReleaseDefines>
+			<ReleaseDefines>$(ReleaseDefines.Trim(';'))</ReleaseDefines>
+			<Directives>$(ReleaseDefines)</Directives>
+		</PropertyGroup>
+	</Target>
+
+	<Target Name="_ParseEncodedDefines">
+		<MetadataValueParserTask Key="define" FromFile="$(FeatureCFile)">
+			<Output PropertyName= "_DefinesEncodedInFeature" TaskParameter= "Values" />
+		</MetadataValueParserTask>
+		<PropertyGroup Condition=" '$(_DefinesEncodedInFeature)' != '' ">
+			<ReleaseDefines>$(ReleaseDefines);$(_DefinesEncodedInFeature)</ReleaseDefines>
+		</PropertyGroup>
+
+		<Message Text="Found Defines: $(ReleaseDefines)" Importance="Normal" Condition=" '$(_DefinesEncodedInTest)' != '' "/>
+	</Target>
+
+	<Target Name= "_SetupGhostRelatedBuildProperties">
+		<PropertyGroup>
+			<GhostBinFolder>$(VariantBinFolderRoot)\</GhostBinFolder>
+			<GhostArtifactFolder>$(VariantArtificatFolderRoot)\Ghost\</GhostArtifactFolder>
+			<IncludePath>$(_AllGhostIncludedPaths);$(IncludePath)</IncludePath>
+			<OutputName>$(ProjectName)</OutputName>
+		</PropertyGroup>
+	</Target>
+
+	<Target Name= "_SetupNativeRelatedBuildProperties">
+		<PropertyGroup>
+			<NativeIntDir>$(VariantArtificatFolderRoot)\$(_NativeToolChain)\</NativeIntDir>
+			<NativeOutDir>$(VariantBinFolderRoot)\</NativeOutDir>
+			<NativeProcessor>$(NativeCPU)</NativeProcessor>
+			<NativeIncludedPaths>$(_AllNativeIncludedPaths.Replace(";\;", ";"))</NativeIncludedPaths>
+			<OutDir>$(NativeOutDir)</OutDir>
+			<OutputName>$(ProjectName)</OutputName>
+		</PropertyGroup>
+	</Target>
+
+	
+	
+	<!-- Misc -->
+	<Target Name="_CreateArtifactFolderForThisVariant">
+		<MakeDir Directories="$(VariantArtificatFolderRoot)" />
+		<MakeDir Directories="$(VariantIdeFolder)" />
+	</Target>
+
+	<Target Name="_CreateBinFolderForThisVariant">
+		<MakeDir Directories="$(VariantBinFolderRoot)" />
+	</Target>
+
+	<Target Name= "_CreateVariantProperties">
+		<PropertyGroup>
+			<VariantArtificatFolderRoot>$(ArtifactsFolderRoot)\$(_VariantName)</VariantArtificatFolderRoot>
+			<VariantBinFolderRoot>$(BinFolderRoot)\$(_VariantName)</VariantBinFolderRoot>
+			<VariantIdeFolder>$(IdeFolderRoot)\$(_VariantName)</VariantIdeFolder>
+		</PropertyGroup>
+	</Target>
+
+	<Target Name= "_CreateIdeProperties">
+		<PropertyGroup Condition="$([System.String]::IsNullOrEmpty('$(FeatureName)')) == 'false'">
+			<IdeFolder>$(VariantIdeFolder)\$(FeatureName)</IdeFolder>
+			<IDEProjectName>$(FeatureName)</IDEProjectName>
+		</PropertyGroup>
+
+		<PropertyGroup Condition="$([System.String]::IsNullOrEmpty('$(FeatureName)')) == 'true'">
+			<IdeFolder>$(VariantIdeFolder)\$(FinalFeatureName)</IdeFolder>
+			<IDEProjectName>$(ProjectName)</IDEProjectName>
+		</PropertyGroup>
+	</Target>
+
+
+
+	<!-- Ghost related targets -->
+	<Target Name= "_CreateGhostArtifactAndBinFolders">
+		<MakeDir Directories= "$(GhostArtifactFolder)" />
+		<MakeDir Directories= "$(GhostBinFolder)" />
+	</Target>
+
+	<Target Name= "_CreateGhostLinkFile">
+		<PropertyGroup>
+			<GhostLinkFile>$(GhostArtifactFolder)$(TargetName)_ghost.links</GhostLinkFile>
+		</PropertyGroup>
+		<LinkFileCreationTask LinkFile= "$(GhostLinkFile)" Links= "@(ClCompile)" ItemName= "ClCompile"/>
+		<Message Text="Link File: $(GhostLinkFile)" Importance="normal" />
+	</Target>
+
+
+
+
+	<!-- Native related targets -->
+	<Target Name= "_CreateNativeArtifactAndBinFolders">
+		<MakeDir Directories= "$(NativeIntDir)" />
+		<MakeDir Directories= "$(NativeOutDir)" />
+	</Target>
+
+	<Target Name= "_CreateNativeLinkFile">
+		<PropertyGroup>
+			<NativeLinkFile>$(NativeIntDir)$(TargetName)_native.links</NativeLinkFile>
+		</PropertyGroup>
+		<LinkFileCreationTask LinkFile= "$(NativeLinkFile)" Links= "@(NativeCompile)" ItemName= "NativeCompile"/>
+		<Message Text="Link File: $(NativeLinkFile)" Importance="normal" />
+	</Target>
+
+
+
+	<Import Project= "$(RecipeListFile)" Condition= " Exists($(RecipeListFile)) " />
+	<Import Project= "$(BuildFeature)" Condition= " Exists($(BuildFeature)) "/>
+
+</Project>

@@ -1,0 +1,134 @@
+@echo off
+
+rem Copyright Bhavnit Singh Bajwa   iobajwa@gmail.com
+rem Please refer to Halwayi's license agreement for more details
+
+set ghost=
+set native=
+set target=releaseAll
+set debug=
+set native_script_path=
+set exec_path=
+set feature_file=
+set FeatureName=final
+set program=false
+set program_with_power=false
+set var_chosen=
+set platform_chosen=
+set ProjectName=
+set CPU=
+set build_ide=false
+
+	rem first things first
+call load_environment
+
+
+
+	rem Parse command line switches to determine the variant, feature
+:rv_parse_parameter_flags
+		IF [%1]==[] (
+			GOTO rv_end_parse
+		) else IF [%1] == [?] (
+		    echo.
+			echo  Builds an image of the project using the active working context
+			echo.
+			echo     release            : builds the 'final' native image feature
+			echo.
+			echo     release debug      : builds the 'final' native image feature with debug
+			echo                          configuration
+			echo.
+			echo     release f          : builds and flashes the 'final' native image feature
+			echo                          by using the specified %FlashTool%
+			echo     release fp         : builds and flashes the 'final' native image feature
+			echo                          by enabling the power of %FlashTool%
+			echo.
+			echo     release view ghost : builds the 'view' ghost image feature
+			echo     release adc native f : builds and flashes the 'adc' feature native image
+			echo     release adc ide    : builds the ide project for 'adc' feature
+			echo.
+			echo     NOTES: 
+			echo           1. 'native' is the default image-type when none is specified
+			echo           2. ghost-images are run when specified with 'f' or 'fe' args
+			GOTO abort_script
+		) else IF [%1]==[ghost] (	
+			set ghost=ghost
+		) else IF [%1]==[native] (
+			set native=native
+		) else IF [%1]==[f] (
+			set program=true
+		) else IF [%1]==[fp] (
+			set program=true
+			set program_with_power=true
+		) else IF [%1]==[debug] (
+			set debug=ForDebug
+		) else IF [%1]==[clean] (
+			set target=cleanReleaseAll
+			set clean=true
+		) else IF [%1]==[ide] (
+			set build_ide=true
+		) else IF [%1]==[var] (
+			set var=%~2
+			SHIFT
+		) else IF [%1]==[platform] (
+			set platform=%~2
+			SHIFT
+		) else (
+			set feature_file=feature %1
+			set FeatureName=%~1
+		)
+	SHIFT
+	GOTO rv_parse_parameter_flags
+:rv_end_parse
+
+
+
+
+	rem display what we're going to do
+if ["%var%"] NEQ [""] (
+	echo Releasing variant '%var%'..
+	set var_chosen=var "%var%"
+)
+if ["%platform%"] NEQ [""] (
+	echo Releasing for '%platform%' platform..
+	set platform_chosen=platform "%platform%"
+)
+if ["%feature_file%"] NEQ [""] (
+	echo Releasing '%FeatureName%' feature..
+)
+
+
+
+	rem some sanity checking
+if [%ghost%]==[] if [%native%]==[] (	
+	rem we do native release by default
+	set native=native
+)
+
+
+	
+	rem build the release
+call halwayiWrapper.bat %native% %ghost% %target%%debug% %feature_file% %var_chosen% %platform_chosen%
+
+if %ERRORLEVEL% GTR 0 (
+	exit /b %ERRORLEVEL%
+)
+
+	
+	rem exit if cannot (or not asked to) flash
+if [%clean%]==[true]	goto exit_script
+if [%program%]==[false]	goto exit_script
+
+echo Attempting to flash the target..
+set params=
+if [%program_with_power%]==[true] (
+	set params=fp
+)
+if ["%debug%"] NEQ [""] (
+	set debug=debug
+)
+call flash.bat %params% %native% %ghost% %debug% %var_chosen% %FeatureName% %platform_chosen%
+
+:exit_script
+echo Done.
+
+:abort_script

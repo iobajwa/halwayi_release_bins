@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+Copyright Bhavnit Singh Bajwa   iobajwa@gmail.com
+Please refer to Halwayi's license agreement for more details
+-->
+
+<Project DefaultTargets = "GhostInfo" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+
+
+  <UsingTask AssemblyFile= "$(BuilderTasksPath)\halwayiTasks.dll" TaskName= "RelativeToAbsolutePathsTask" />
+  <UsingTask AssemblyFile= "$(BuilderTasksPath)\halwayiTasks.dll" TaskName= "GhostAdditionalDirectivesBuilder" />
+
+
+  <PropertyGroup>
+    <_SelectedConfiguration>Debug</_SelectedConfiguration>
+  </PropertyGroup>
+  
+  
+  
+  <!-- Configurations and other Global properties/items can be defined here -->
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+      <PlatformToolset>v141</PlatformToolset>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+      <PlatformToolset>v141</PlatformToolset>
+    </ProjectConfiguration>
+  </ItemGroup>
+
+
+  <PropertyGroup Label="Globals">
+    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+
+
+
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+
+  <!-- Behaviour as per the Global Configurations properties is to be defined here  -->
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+
+  <!-- Platform/Compiler/Linker specific properties, includes should be done here -->
+  <ImportGroup Label="PropertySheets" Condition="'$(Platform)'=='Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  
+  
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <AdditionalOptions></AdditionalOptions>
+       <!--<MultiProcessorCompilation>true</MultiProcessorCompilation>--> 
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <AdditionalOptions></AdditionalOptions>
+       <!--<MultiProcessorCompilation>true</MultiProcessorCompilation>--> 
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+
+  
+  <!-- Finally import the targets -->
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+
+
+  <Target Name = "GhostInfo">
+    <Message Text="Include Paths : $(IncludePath)" Importance="normal"/>
+    <Message Text="Exec Name     : $(TargetName)" Importance="normal"/>
+    <Message Text="Output Dir    : $(OutDir)" Importance="normal"/>
+    <Message Text="Artifact Dir  : $(IntDir)" Importance="normal"/>
+    <Message Text="Directives    : %(ClCompile.AdditionalOptions)" Importance="normal" />
+    <Message Text="Source Files  : " Importance="normal"/>
+    <Message Text="                %(CLCompile.Identity)" Importance="normal"/>
+  </Target>
+
+
+  <Target Name="SetupGhostBuildProperties">
+    <PropertyGroup>
+      <IncludePath>$(GhostIncludedPaths);$(IncludePath)</IncludePath>
+      <Configuration>$(_SelectedConfiguration)</Configuration>
+      <Platform>Win32</Platform>
+    </PropertyGroup>
+  </Target>
+
+  <Target Name="GhostBuild" DependsOnTargets="build">
+  </Target>
+
+  <Target Name="GhostBuildAll" DependsOnTargets="build">
+  </Target>
+
+
+  <Target Name= "_PerformPreSetupSteps">
+    
+    <PropertyGroup>
+      <IncludePath>$(Paths);$(IncludePath)</IncludePath>
+    </PropertyGroup>
+    
+    <!-- 
+         vc++ compiler is because of some reason giving pains to pass preprocessor directives, 
+         hence they are now passed as additional directives 
+    -->
+    <GhostAdditionalDirectivesBuilder Directives= "$(Directives)">
+      <Output PropertyName= "AddDirTemp" TaskParameter= "FormedAdditionalDirectives" />
+    </GhostAdditionalDirectivesBuilder>
+
+    <ItemGroup>
+      <ClCompile>
+        <AdditionalOptions>$(AddDirTemp) %(AdditionalOptions)</AdditionalOptions>
+      </ClCompile>
+    </ItemGroup>
+    
+  </Target>
+
+  
+
+  
+</Project>

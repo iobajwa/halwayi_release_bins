@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!-- 
+	************************************************************************************************************************
+																						            Append Paths
+																							
+    Provides a simplified interface to provide 'extra' paths for sources while building a release. This comes in handy in
+    scenarios where different implementation has to be used for a given interface for different platforms.
+    
+    Simply provide the corresponding PreXXX (for appending paths Before a particular path- NativeSource/GhostSource/Source
+    /Include) or PostXXX paths and rest will be automatically taken care of.
+    
+	************************************************************************************************************************
+	-->
+
+
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+
+  <UsingTask AssemblyFile = "$(BuilderTasksPath)\halwayiTasks.dll" TaskName = "RelativeToAbsolutePathsTask" />
+
+	<!-- 
+	************************************************************************************************************************
+																							Declare Properties and Items
+	************************************************************************************************************************
+	-->
+
+  <!-- 
+    Declare these properties in your own recipe to override the default values
+  -->
+  <PropertyGroup>
+    <PreNativeSourceFolders></PreNativeSourceFolders>
+    <PostNativeSourceFolders></PostNativeSourceFolders>
+    <PreNativeAutoSourceFolders></PreNativeAutoSourceFolders>
+    <PostNativeAutoSourceFolders></PostNativeAutoSourceFolders>
+    <PreGhostSourceFolders></PreGhostSourceFolders>
+    <PostGhostSourceFolders></PostGhostSourceFolders>
+    <PreGhostAutoSourceFolders></PreGhostAutoSourceFolders>
+    <PostGhostAutoSourceFolders></PostGhostAutoSourceFolders>
+    <PreSourceFolders></PreSourceFolders>
+    <PostSourceFolders></PostSourceFolders>
+    <PreIncludeFolders></PreIncludeFolders>
+    <PostIncludeFolders></PostIncludeFolders>
+  </PropertyGroup>
+
+  
+	<!--
+	************************************************************************************************************************
+																								Override Public Targets
+	************************************************************************************************************************
+	-->
+
+  <!-- Inject Paths -->
+  <Target Name = "_InjectSeperateGhostSourceFolders" BeforeTargets="_BuildPathItems">
+    <!-- This will flatten the paths -->
+    <ItemGroup>
+      <PreNativeSources Include="$(PreNativeSourceFolders)" />
+      <PostNativeSources Include="$(PostNativeSourceFolders)" />
+      <PreNativeAutoSources Include="$(PreNativeAutoSourceFolders)" />
+      <PostNativeAutoSources Include="$(PostNativeAutoSourceFolders)" />
+      <PreGhostSources Include="$(PreGhostSourceFolders)" />
+      <PostGhostSources Include="$(PostGhostSourceFolders)" />
+      <PreGhostAutoSources Include="$(PreGhostAutoSourceFolders)" />
+      <PostGhostAutoSources Include="$(PostGhostAutoSourceFolders)" />
+      <PreSources Include="$(PreSourceFolders)" />
+      <PostSources Include="$(PostSourceFolders)" />
+      <PreIncludes Include="$(PreIncludeFolders)" />
+      <PostIncludes Include="$(PostIncludeFolders)" />
+    </ItemGroup>
+    <PropertyGroup>
+      <_NativeSourceFolders>@(PreNativeSources);$(PreNativeAutoSources);$(_NativeSourceFolders);@(PostNativeSources);$(PostNativeAutoSources)</_NativeSourceFolders>
+      <_GhostSourceFolders>@(PreGhostSources);$(PreGhostAutoSources);$(_GhostSourceFolders);@(PostGhostSources);$(PostGhostAutoSources)</_GhostSourceFolders>
+      <_SourceFolders>@(PreSources);$(_SourceFolders);@(PostSources)</_SourceFolders>
+      <_IncludeFolders>@(PreIncludes);$(_IncludeFolders);@(PostIncludes)</_IncludeFolders>
+    </PropertyGroup>
+  </Target>
+
+  <Target Name = "_ShowResult" AfterTargets="_BuildPathItems">
+    <Message Text="Injected result (ghost): %(_GhostAllIncludedPathItem.Identity)" Importance="low" Condition="'$(BuildGhostAsWell)' == 'true'"/>
+    <Message Text="Injected result (native): %(NativeIncludedPathsItem.Identity)" Importance="low" Condition="'$(BuildNativeAsWell)' == 'true'"/>
+  </Target>
+
+
+</Project>

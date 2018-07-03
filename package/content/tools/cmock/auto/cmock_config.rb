@@ -37,6 +37,8 @@ class CMockConfig
     :only                        => [],
   }
 
+  attr_accessor :options
+
   def initialize(options=nil)
     case(options)
       when NilClass then options = CMockDefaultOptions.clone
@@ -104,12 +106,7 @@ class CMockConfig
     # transform back the function syntax (which was destructured because ',' '(' ')' '*' cannot be passed as command line arguments)
     inject_functions = []
     @options[:inject].each do |func|
-      func = func + "; "
-      func = func.gsub('...', ')')
-      func = func.gsub('..', ',')
-      func = func.gsub('.', '(')
-      func = func.gsub(':', "*")
-      inject_functions << func
+      inject_functions << func + "; "
     end
 
     @options[:inject] = inject_functions;

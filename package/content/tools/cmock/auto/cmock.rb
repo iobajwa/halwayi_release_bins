@@ -87,7 +87,7 @@ if ($0 == __FILE__)
   ARGV.each do |arg|
     if (arg =~ /^-o\"?([a-zA-Z+0-9._\\\/:\s]+)\"?/)
       options.merge! CMockConfig.load_config_file_from_yaml( arg.gsub(/^-o/,'') )
-    elsif (arg =~ /^--([a-zA-Z+0-9._\\\/:\s]+)=\"?([a-zA-Z+0-9._\\\/:\s\;]+)\"?/)  # match against "--key=value"
+    elsif (arg =~ /^--([a-zA-Z+0-9._\-+\\\/:\s]+)=\"?([a-zA-Z+0-9._\-+\(\)\*,\\\/:\s\;]+)\"?/)  # match against "--:k_e.-y=:value(*,)"
       options = option_maker(options, $1, $2)
     elsif (arg =~ /^--([a-zA-Z+0-9._\\\/:\s]+)/) # match agains "--key"
       options = option_maker(options, $1, $2)

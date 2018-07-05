@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <!-- 
-	************************************************************************************************************************
-																						      Override Source Files
-																							
+  ************************************************************************************************************************
+                                                  Override Source Files
+                                              
     Provides a simplified interface to be able to override the source files (for both ghost and native platforms) without
     having to manually override the respected targets. The user simply needs to include this recipe in his/her own and
     override the provide the @(CustomGhostFiles) and @(CustomNativeFiles) items.
@@ -13,19 +13,19 @@
     project file are used. These features make this recipe very powerful because the project's artifacts and bin outputs 
     can remain intact.
     
-	************************************************************************************************************************
-	-->
+  ************************************************************************************************************************
+  -->
 
 
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
 
   <UsingTask AssemblyFile = "$(BuilderTasksPath)\halwayiTasks.dll" TaskName = "RelativeToAbsolutePathsTask" />
 
-	<!-- 
-	************************************************************************************************************************
-																							Declare Properties and Items
-	************************************************************************************************************************
-	-->
+  <!-- 
+  ************************************************************************************************************************
+                                              Declare Properties and Items
+  ************************************************************************************************************************
+  -->
 
   <!-- 
     Declare these properties in your own recipe to override the default values
@@ -37,66 +37,68 @@
   </PropertyGroup>
   
   <!-- Declare these two items in your own recipee to override the source files to build -->
-	<!--<ItemGroup>
-		<CustomGhostFiles Include =""/>
-		<CustomNativeFiles Include = ""/>
-	</ItemGroup>-->
+  <!--<ItemGroup>
+    <CustomGhostFiles Include =""/>
+    <CustomNativeFiles Include = ""/>
+  </ItemGroup>-->
 
-	<!--
-	************************************************************************************************************************
-																								Override Public Targets
-	************************************************************************************************************************
-	-->
+  <!--
+  ************************************************************************************************************************
+                                                Override Public Targets
+  ************************************************************************************************************************
+  -->
 
-	<Target Name = "_CreateSourceFileLists" DependsOnTargets="__BeforeOverriding;__ConvertSourceListsToAbsolutePaths;_CreateGhostSourceFileList;_CreateNativeSourceFileList">
+  <Target Name = "_CreateSourceFileLists" DependsOnTargets="__BeforeOverriding;__ConvertSourceListsToAbsolutePaths;_CreateGhostSourceFileList;_CreateNativeSourceFileList">
     <Message Text = "Source files overriden." Importance="normal" />
-	</Target>
+  </Target>
 
   <Target Name="__ConvertSourceListsToAbsolutePaths" DependsOnTargets="__ConvertGhostSourceListsToAbsolutePaths;__ConvertNativeSourceListsToAbsolutePaths">
   </Target>
 
-  <Target Name="__ConvertGhostSourceListsToAbsolutePaths" Outputs="%(CustomGhostFiles.Identity)">
-    <RelativeToAbsolutePathsTask PathsToCheck="%(CustomGhostFiles.Identity)" Root = "$(ProjectRoot)">
-      <Output PropertyName = "_sc_pp_temp_" TaskParameter = "ConvertedPaths" />
+  <Target Name="__ConvertGhostSourceListsToAbsolutePaths">
+    <RelativeToAbsolutePathsTask PathsToCheck="@(CustomGhostFiles)" Root = "$(ProjectRoot)">
+      <Output ItemName = "_sc_pp_temp1_" TaskParameter = "ConvertedPathsItem" />
     </RelativeToAbsolutePathsTask>
     <ItemGroup>
-      <CustomGhostFilesAb Include ="$(_sc_pp_temp_.Trim(';'))" Condition="Exists($(_sc_pp_temp_.Trim(';')))"/>
+      <CustomGhostFilesAb Remove="%(CustomGhostFilesAb.Identity)" />
+      <CustomGhostFilesAb Include="%(_sc_pp_temp1_.Identity)" />
     </ItemGroup>
   </Target>
 
-  <Target Name="__ConvertNativeSourceListsToAbsolutePaths" Outputs="%(CustomNativeFiles.Identity)">
-    <RelativeToAbsolutePathsTask PathsToCheck="%(CustomNativeFiles.Identity)" Root = "$(ProjectRoot)">
-      <Output PropertyName = "_sc_pp_temp_" TaskParameter = "ConvertedPaths" />
+  <Target Name="__ConvertNativeSourceListsToAbsolutePaths">
+    <RelativeToAbsolutePathsTask PathsToCheck="@(CustomNativeFiles)" Root = "$(ProjectRoot)">
+      <Output ItemName = "_sc_pp_temp2_" TaskParameter = "ConvertedPathsItem" />
     </RelativeToAbsolutePathsTask>
     <ItemGroup>
-      <CustomNativeFilesAb Include ="$(_sc_pp_temp_.Trim(';'))" Condition="Exists($(_sc_pp_temp_.Trim(';')))"/>
+      <CustomNativeFilesAb Remove="%(CustomNativeFilesAb.Identity)" />
+      <CustomNativeFilesAb Include="%(_sc_pp_temp2_.Identity)" />
     </ItemGroup>
   </Target>
   
-	<Target Name = "_CreateGhostSourceFileList">
-		<ItemGroup>
-			<ClCompile Include="%(CustomGhostFilesAb.Identity)">
-				<Root></Root>
-				<ArtifactFolder></ArtifactFolder>
-				<BinFolder></BinFolder>
-			</ClCompile>
-		</ItemGroup>
-	</Target>
+  <Target Name = "_CreateGhostSourceFileList">
+    <ItemGroup>
+      <ClCompile Include="%(CustomGhostFilesAb.Identity)">
+        <Root></Root>
+        <ArtifactFolder></ArtifactFolder>
+        <BinFolder></BinFolder>
+      </ClCompile>
+    </ItemGroup>
+  </Target>
 
-	<Target Name = "_CreateNativeSourceFileList">
-		<ItemGroup>
-			<NativeCompile Include="%(CustomNativeFilesAb.Identity)">
-				<Root></Root>
-				<ArtifactFolder></ArtifactFolder>
-				<BinFolder></BinFolder>
-			</NativeCompile>
-		</ItemGroup>
-	</Target>
+  <Target Name = "_CreateNativeSourceFileList">
+    <ItemGroup>
+      <NativeCompile Include="%(CustomNativeFilesAb.Identity)">
+        <Root></Root>
+        <ArtifactFolder></ArtifactFolder>
+        <BinFolder></BinFolder>
+      </NativeCompile>
+    </ItemGroup>
+  </Target>
 
-	<Target Name = "__BeforeOverriding" />
+  <Target Name = "__BeforeOverriding" />
 
 
-  <!-- over rides the default target output name and paths for native and ghost. -->
+  <!-- overrides the default target output name and paths for native and ghost. -->
   <!-- if this is not required, override this in your own target to empty implementation. -->
   <Target Name="OverrideTargetNameAndFolders" AfterTargets="_SetupBuildProperties" Condition=" '$([System.String]::IsNullOrWhiteSpace($(OverridenProjectName)))' == 'false' AND '$([System.String]::IsNullOrWhiteSpace($(OverridenProjectSubDir)))' == 'false' ">
     <Message Text="Overriding default target name, artifact and bin folders." />

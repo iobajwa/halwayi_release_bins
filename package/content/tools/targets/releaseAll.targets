@@ -82,7 +82,7 @@ Please refer to Halwayi's license agreement for more details
 	<UsingTask AssemblyFile= "$(BuilderTasksPath)\halwayiTasks.dll" TaskName= "RelativeToAbsolutePathsTask" />
 	<UsingTask AssemblyFile= "$(BuilderTasksPath)\halwayiTasks.dll" TaskName= "LinkFileCreationTask" />
 	<UsingTask AssemblyFile= "$(BuilderTasksPath)\halwayiTasks.dll" TaskName= "TransformDefinesTask" />
-	<UsingTask AssemblyFile= "$(BuilderTasksPath)\halwayiTasks.dll" TaskName= "MetadataValueParserTask" />
+	<UsingTask AssemblyFile= "$(BuilderTasksPath)\halwayiTasks.dll" TaskName= "FeatureBuildConfigValidatorTask" />
 
 
 
@@ -467,9 +467,9 @@ Please refer to Halwayi's license agreement for more details
 	</Target>
 
 	<Target Name="_ParseEncodedDefines">
-		<MetadataValueParserTask Key="define" FromFile="$(FeatureCFile)">
-			<Output PropertyName= "_DefinesEncodedInFeature" TaskParameter= "Values" />
-		</MetadataValueParserTask>
+		<FeatureBuildConfigValidatorTask FeatureCFile="$(FeatureCFile)" VariantPlatform="$(_VariantName)" FeatureName="$(FeatureName)" >
+			<Output PropertyName= "_DefinesEncodedInFeature" TaskParameter= "ParsedDefines" />
+		</FeatureBuildConfigValidatorTask>
 		<PropertyGroup Condition=" '$(_DefinesEncodedInFeature)' != '' ">
 			<ReleaseDefines>$(ReleaseDefines);$(_DefinesEncodedInFeature)</ReleaseDefines>
 		</PropertyGroup>

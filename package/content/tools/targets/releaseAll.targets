@@ -99,7 +99,8 @@ Please refer to Halwayi's license agreement for more details
 	************************************************************************************************************************
 	-->
 
-	<Target Name= "BuildAll" DependsOnTargets= " 	_SanityCheck_BuildAll;
+	<Target Name= "BuildAll" DependsOnTargets= " 	_ResolveFeatureLabel;
+													_SanityCheck_BuildAll;
 													_SetupLabels;
 													_CreateBinAndArtifactFolders;
 													_CreateVariantProperties;
@@ -125,7 +126,8 @@ Please refer to Halwayi's license agreement for more details
 
 
 
-	<Target Name= "CleanAll" DependsOnTargets= "_SetupBinAndArtifactFolders;
+	<Target Name= "CleanAll" DependsOnTargets= "_ResolveFeatureLabel;
+												_SetupBinAndArtifactFolders;
 												_SetupLabels;
 												_CreateVariantProperties;
 												_CreateIdeProperties;
@@ -186,6 +188,12 @@ Please refer to Halwayi's license agreement for more details
 			'BuildAll' private helper targets 
 	========================================= -->
 
+	<Target Name= "_ResolveFeatureLabel">
+		<PropertyGroup Condition="$([System.String]::IsNullOrEmpty('$(FeatureName)')) == 'true'">
+			<FeatureName>$(FinalFeatureName)</FeatureName>
+		</PropertyGroup>
+	</Target>
+
 	<Target Name= "_SanityCheck_BuildAll" DependsOnTargets="_SanityCheck_ProjectProperties;_SanityCheck_VariantProperties" />
 
 	<Target Name="_SetupLabels">
@@ -211,14 +219,8 @@ Please refer to Halwayi's license agreement for more details
   	<PropertyGroup>
 		<!-- <AutoCodeRoot>$(ArtifactsFolderRoot)\auto\$(_VariantName)\code\source</AutoCodeRoot> -->
 		<AutoToolScriptsRoot>$(ArtifactsFolderRoot)\auto\$(_VariantName)\tool_scripts\</AutoToolScriptsRoot>
-	</PropertyGroup>
-    <PropertyGroup Condition="$([System.String]::IsNullOrEmpty('$(FeatureName)')) == 'false'">
-      <ArtifactsFolderRoot>$(ArtifactsFolderRoot)\features\$(FeatureName)\$(SelectedConfiguration)</ArtifactsFolderRoot>
-      <BinFolderRoot>$(BinFolderRoot)\features\$(FeatureName)\$(SelectedConfiguration)</BinFolderRoot>
-    </PropertyGroup>
-    <PropertyGroup Condition="$([System.String]::IsNullOrEmpty('$(FeatureName)')) == 'true'">
-      <ArtifactsFolderRoot>$(ArtifactsFolderRoot)\features\$(FinalFeatureName)\$(SelectedConfiguration)</ArtifactsFolderRoot>
-      <BinFolderRoot>$(BinFolderRoot)\features\$(FinalFeatureName)\$(SelectedConfiguration)</BinFolderRoot>
+		<ArtifactsFolderRoot>$(ArtifactsFolderRoot)\features\$(FeatureName)\$(SelectedConfiguration)</ArtifactsFolderRoot>
+		<BinFolderRoot>$(BinFolderRoot)\features\$(FeatureName)\$(SelectedConfiguration)</BinFolderRoot>
     </PropertyGroup>
   </Target>
 
@@ -466,7 +468,7 @@ Please refer to Halwayi's license agreement for more details
 		</PropertyGroup>
 	</Target>
 
-	<Target Name="_ParseEncodedDefines">
+	<Target Name="_ParseEncodedDefines" Condition="'$(FeatureName)' != '$(FinalFeatureName)'">
 		<FeatureBuildConfigValidatorTask FeatureCFile="$(FeatureCFile)" VariantPlatform="$(_VariantName)" FeatureName="$(FeatureName)" >
 			<Output PropertyName= "_DefinesEncodedInFeature" TaskParameter= "ParsedDefines" />
 		</FeatureBuildConfigValidatorTask>
@@ -518,14 +520,9 @@ Please refer to Halwayi's license agreement for more details
 	</Target>
 
 	<Target Name= "_CreateIdeProperties">
-		<PropertyGroup Condition="$([System.String]::IsNullOrEmpty('$(FeatureName)')) == 'false'">
+		<PropertyGroup>
 			<IdeFolder>$(VariantIdeFolder)\$(FeatureName)</IdeFolder>
 			<IDEProjectName>$(FeatureName)</IDEProjectName>
-		</PropertyGroup>
-
-		<PropertyGroup Condition="$([System.String]::IsNullOrEmpty('$(FeatureName)')) == 'true'">
-			<IdeFolder>$(VariantIdeFolder)\$(FinalFeatureName)</IdeFolder>
-			<IDEProjectName>$(ProjectName)</IDEProjectName>
 		</PropertyGroup>
 	</Target>
 

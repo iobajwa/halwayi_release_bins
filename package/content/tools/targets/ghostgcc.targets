@@ -75,8 +75,7 @@ Please refer to Halwayi's license agreement for more details
               DebugBuild="$(DebugBuild)" PreprocessorDirectives="$(Directives)" Processor="$(GhostProcessor)" 
               PossibleToolChainRootPaths="$(ToolChainPath)" 
               ToolBinariesTimeoutPeriod="$(ToolChainTimeoutPeriod)" MaximumParallelRuns="$(CoresUsage)"
-              ProjectRoot="$(ProjectRoot)"
-              LinkerArgs="$(GhostLinkerArgs)"/>
+              ProjectRoot="$(ProjectRoot)" CompilerArgs="$(GhostCompilerArgs)" LinkerArgs="$(GhostLinkerArgs)"/>
   </Target>
 
   <Target Name="GhostBuildAll" DependsOnTargets="GhostBuild">

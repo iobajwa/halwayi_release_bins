@@ -27,6 +27,9 @@ Please refer to Halwayi's license agreement for more details
 		<NativeCPU></NativeCPU>
 		<Defines></Defines>
 		<NativeLinkerArgs></NativeLinkerArgs>
+
+		<GhostCompilerArgs></GhostCompilerArgs>
+		<GhostLinkerArgs></GhostLinkerArgs>
 		
 		<ArtifactsFolderRoot></ArtifactsFolderRoot>
 		<BinFolderRoot></BinFolderRoot>
@@ -112,22 +115,22 @@ Please refer to Halwayi's license agreement for more details
 	
 	<!-- Runs the build process $(PassedGlob) -->
 	<Target Name="Build" DependsOnTargets=" _SanityCheck_SingleTest;
-																						_BuildPathItems;
-																						_CheckPaths;
-																						_CreateIncludePathList;                                                 
-																						_CreateVariantProperties;
-																						_FindNativeMain;
-																						_CreateTestFileList;
-																						_FilterTestFileList;
-																						_TestIfNoTestsFound;
-																						_FindRelativeNamespaceForEachTest;
-																						_FillTestProperties;
-																						_TestIfNoTestsFound;
-																						_TestIfNativeMainNotFound;
-																						_CreateIncludePathList;
-																						_CreateArtifactFolderForEachTestFile;
-																						_CreateBinFolderForEachTestFile;
-																						_BuildTests" >
+											_BuildPathItems;
+											_CheckPaths;
+											_CreateIncludePathList;     
+											_CreateVariantProperties;
+											_FindNativeMain;
+											_CreateTestFileList;
+											_FilterTestFileList;
+											_TestIfNoTestsFound;
+											_FindRelativeNamespaceForEachTest;
+											_FillTestProperties;
+											_TestIfNoTestsFound;
+											_TestIfNativeMainNotFound;
+											_CreateIncludePathList;
+											_CreateArtifactFolderForEachTestFile;
+											_CreateBinFolderForEachTestFile;
+											_BuildTests" >
 	</Target>
 
 

@@ -247,6 +247,8 @@ Please refer to Halwayi's license agreement for more details
       <NativeToolChainTimeout>%(VariantsBatch.ReleaseToolChainTimeoutPeriod)</NativeToolChainTimeout>
       <NativeLinkerArgs>%(VariantsBatch.ReleaseNativeLinkerArgs)</NativeLinkerArgs>
       <NativeCompilerArgs>%(VariantsBatch.ReleaseNativeCompilerArgs)</NativeCompilerArgs>
+      <GhostCompilerArgs>%(VariantsBatch.ReleaseGhostCompilerArgs)</GhostCompilerArgs>
+      <GhostLinkerArgs>%(VariantsBatch.ReleaseGhostLinkerArgs)</GhostLinkerArgs>
     </PropertyGroup>
     <PropertyGroup Condition="'$(ReleaseBuild)' != 'true'">
       <NativeCPU>%(VariantsBatch.TestCPU)</NativeCPU>
@@ -255,6 +257,8 @@ Please refer to Halwayi's license agreement for more details
       <NativeToolChainTimeout>%(VariantsBatch.TestToolChainTimeoutPeriod)</NativeToolChainTimeout>
       <NativeLinkerArgs>%(VariantsBatch.TestNativeLinkerArgs)</NativeLinkerArgs>
       <NativeCompilerArgs>%(VariantsBatch.TestNativeCompilerArgs)</NativeCompilerArgs>
+      <GhostCompilerArgs>%(VariantsBatch.TestGhostCompilerArgs)</GhostCompilerArgs>
+      <GhostLinkerArgs>%(VariantsBatch.TestGhostLinkerArgs)</GhostLinkerArgs>
     </PropertyGroup>
 
     <MSBuild Projects= "$(TargetsToolPath)\$(TargetFile)"
@@ -274,7 +278,7 @@ Please refer to Halwayi's license agreement for more details
                            NativeLinkerArgs = $(NativeLinkerArgs); RecipeListFile = $(RecipeListFile);
                            ToolScriptsFolders = $(_tv_ToolScripts); ToolChainPath = $(NativeToolChainPath);
                            ToolChainTimeoutPeriod = $(NativeToolChainTimeout); PlatformName = %(VariantsBatch.Platform);
-                           NativeCompilerArgs = $(NativeCompilerArgs); GhostCompilerArgs = $(GhostCompilerArgs);
+                           NativeCompilerArgs = $(NativeCompilerArgs); GhostCompilerArgs = $(GhostCompilerArgs); GhostLinkerArgs = $(GhostLinkerArgs);
                            BuildIDE = $(BuildIDE);
                         "
              />
@@ -290,6 +294,7 @@ Please refer to Halwayi's license agreement for more details
         KnownToolChains="@(ToolChains)"
         DefaultGhostTimeoutPeriod="$(GhostTimeoutPeriod)"
         DefaultSimulatorTimeoutPeriod="$(SimulatorTimeoutPeriod)"
+        GhostToolchain="$(GhostToolchain)"
       >
       <Output ItemName= "VariantsBatchAll" TaskParameter= "VariantsClubbed" />
     </ClubVariantPlatformTask>

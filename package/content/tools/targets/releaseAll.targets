@@ -468,7 +468,7 @@ Please refer to Halwayi's license agreement for more details
 		</PropertyGroup>
 	</Target>
 
-	<Target Name="_ParseEncodedDefines" Condition="'$(FeatureName)' != '$(FinalFeatureName)'">
+	<Target Name="_ParseEncodedDefines">
 		<FeatureBuildConfigValidatorTask FeatureCFile="$(FeatureCFile)" VariantPlatform="$(_VariantName)" FeatureName="$(FeatureName)" >
 			<Output PropertyName= "_DefinesEncodedInFeature" TaskParameter= "ParsedDefines" />
 		</FeatureBuildConfigValidatorTask>

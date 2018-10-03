@@ -25,7 +25,7 @@ Please refer to Halwayi's license agreement for more details
   ************************************************************************************************************************
   -->
 
-  <UsingTask AssemblyFile= "$(BuilderTasksPath)\halwayiTasks.dll" TaskName= "FindFilesFromIncludedFilesTask" />
+  <UsingTask AssemblyFile= "$(BuilderTasksPath)\halwayiTasks.dll" TaskName= "StandinGeneratorTask" />
   <UsingTask AssemblyFile= "$(BuilderTasksPath)\halwayiTasks.dll" TaskName= "FindMatchingMetadataTask" />
   <UsingTask AssemblyFile= "$(BuilderTasksPath)\halwayiTasks.dll" TaskName= "MetadataContainsEntryTask" />
   <UsingTask AssemblyFile= "$(BuilderTasksPath)\halwayiTasks.dll" TaskName= "MetadataAppendEntryTask" />
@@ -43,53 +43,56 @@ Please refer to Halwayi's license agreement for more details
   ************************************************************************************************************************
   -->
 
-  <Target Name="_GenerateAnyRequiredStubs" DependsOnTargets="_DiscoverStubableFiles;
-                                                            _DiscoverStubConfigMetadata;
-                                                            _GenerateStubs;
-                                                            _GenerateStubSetupFiles">
+  <Target Name="_GenerateAnyRequiredCStandins" DependsOnTargets="_DiscoverStandinFiles;">
   </Target>
 
 
-  <Target Name="_DiscoverStubableFiles">
-    <FindFilesFromIncludedFilesTask IncludedFiles="@(IncludedFilesItem)" Prefix="$(StubPrefix)">
-      <Output ItemName="StubableFilesItem" TaskParameter="FoundFiles" />
-      <Output ItemName="StubableFilesItemRaw" TaskParameter="FoundFilesRaw" />
-      <Output PropertyName="StubableFilesCount" TaskParameter="FoundFilesCount" />
-      <Output ItemName="StubMetaDataItem" TaskParameter="ConfigMetadata" />
-    </FindFilesFromIncludedFilesTask>
-
-    <ItemGroup>
-      <RunnerIncludeFilesItem Include="@(StubableFilesItemRaw)" />
+  <Target Name="_DiscoverStandinFiles">
+    <ItemGroup Condition="'$(BuildGhostAlso)' == 'true'">
+      <StandinSearchPaths Include="@(GhostIncludedPathsItem)" />
     </ItemGroup>
+    <ItemGroup Condition="'$(BuildNativeAlso)' == 'true'">
+      <StandinSearchPaths Include="@(NativeIncludedPathsItem)" />
+    </ItemGroup>
+    <PropertyGroup Condition="'$(BuildGhostAlso)' == 'true'">
+      <StandinOutputPath>$(StandinGhostRoot)</StandinOutputPath>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(BuildNativeAlso)' == 'true'">
+      <StandinOutputPath>$(StandinNativeRoot)</StandinOutputPath>
+    </PropertyGroup>
 
-    <Message Text= "Discovered Stubable Files:" Importance= "normal"  Condition= " '$(StubableFilesCount)' != '0' " />
-    <Message Text= "     %(StubableFilesItem.Identity)" Importance= "normal"  Condition= " '$(StubableFilesCount)' != '0' " />
-    <Message Text= "Discovered Stub Metadata:" Importance= "normal"  Condition= " '$(StubableFilesCount)' != '0' " />
-    <Message Text= "    %(StubMetaDataItem.Identity)" Importance= "normal"  Condition= " '$(StubableFilesCount)' != '0' " />
+    <StandinGeneratorTask IncludedFiles="@(IncludedFilesItem)" PrefixesToIgnore="$(StubPrefix);$(MockPrefix);"
+                          SearchPaths="@(StandinSearchPaths)" OutputPath="$(StandinOutputPath)" >
+      <Output ItemName="StandinsFilesItem" TaskParameter="FoundFiles" />
+      <Output PropertyName="StandinsFileCount" TaskParameter="FoundFilesCount" />
+    </StandinGeneratorTask>
+
+    <Message Text="@(StandinsFilesItem)" />
+    <!-- <Error Text="kaboom!" /> -->
   </Target>
 
 
-  <Target Name="_DiscoverStubConfigMetadata" Outputs="$(StubPrefix)" Inputs= "%(StubableFilesItem.Identity)" Condition= " '$(StubableFilesCount)' != '0' ">
+  <Target Name="_DiscoverStubConfigMetadata" Outputs="$(StubPrefix)" Inputs= "%(StandinsFilesItem.Identity)" Condition= " '$(StandinsFileCount)' != '0' ">
 
-    <FindMatchingMetadataTask File="%(StubableFilesItem.Identity)" RawMetaDataChunks="@(StubMetaDataItem)">
+    <FindMatchingMetadataTask File="%(StandinsFilesItem.Identity)" RawMetaDataChunks="@(StandinMetaDataItem)">
       <Output PropertyName= "_processedConfigMetaData" TaskParameter= "FoundMetaData" />
     </FindMatchingMetadataTask>
 
     <ItemGroup>
-      <StubableFilesItem Condition="'%(StubableFilesItem.Identity)' == '%(Identity)'" >
+      <StandinsFilesItem Condition="'%(StandinsFilesItem.Identity)' == '%(Identity)'" >
         <Metadata>$(_processedConfigMetaData)</Metadata>
-      </StubableFilesItem>
+      </StandinsFilesItem>
     </ItemGroup>
   </Target>
 
   
   
-  <Target Name="_GenerateStubs" DependsOnTargets="_GenerateStubsForGhost;_GenerateStubsForNative" Condition=" '$(StubableFilesCount)' != '0' ">
-    <Message Text="Generated $(StubableFilesCount) stub(s)." Importance="Normal" />
+  <Target Name="_GenerateStubs" DependsOnTargets="_GenerateStubsForGhost;_GenerateStubsForNative" Condition=" '$(StandinsFileCount)' != '0' ">
+    <Message Text="Generated $(StandinsFileCount) stub(s)." Importance="Normal" />
   </Target>
 
   <Target Name= "_GenerateStubsForGhost" Condition="'$(BuildGhostAlso)' == 'true'">
-    <CreateStubsInParallelTask StubableFiles="@(StubableFilesItem)" 
+    <CreateStubsInParallelTask StubableFiles="@(StandinsFilesItem)" 
                                Paths="@(GhostIncludedPathsItem)" 
                                TestFile="$(TestFileFullname)" 
                                ToolPath="$(CStubPath)\cstub.exe" 
@@ -102,7 +105,7 @@ Please refer to Halwayi's license agreement for more details
   </Target>
 
   <Target Name= "_GenerateStubsForNative" Condition="'$(BuildNativeAlso)' == 'true'">
-    <CreateStubsInParallelTask StubableFiles="@(StubableFilesItem)" 
+    <CreateStubsInParallelTask StubableFiles="@(StandinsFilesItem)" 
                                Paths="@(NativeIncludedPathsItem)" 
                                TestFile="$(TestFileFullname)" 
                                ToolPath="$(CStubPath)\cstub.exe" 

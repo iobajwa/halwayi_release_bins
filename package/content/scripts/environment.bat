@@ -11,6 +11,7 @@ set FeatureCodeRoot=%CodeRoot%\features
 set FeatureSourceName=main.c
 set BinRoot=%ProjectRoot%\bin
 set ArtifactsRoot=%ProjectRoot%\artifacts
+set BuildMagicRoot=%ArtifactsRoot%\scripts
 set RecipesRoot=%ProjectRoot%\recipes
 set FeaturesRoot=%ProjectRoot%\features
 set ProjectFile=%ProjectRoot%\project.properties

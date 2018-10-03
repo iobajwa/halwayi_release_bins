@@ -27,7 +27,7 @@ Please refer to Halwayi's license agreement for more details
   -->
 
   <UsingTask AssemblyFile= "$(BuilderTasksPath)\halwayiTasks.dll" TaskName= "FindFilesFromIncludedFilesTask" />
-  <UsingTask AssemblyFile= "$(BuilderTasksPath)\halwayiTasks.dll" TaskName= "FindMathcingMetadataTask" />
+  <UsingTask AssemblyFile= "$(BuilderTasksPath)\halwayiTasks.dll" TaskName= "FindMatchingMetadataTask" />
   <UsingTask AssemblyFile= "$(BuilderTasksPath)\halwayiTasks.dll" TaskName= "MetadataContainsEntryTask" />
   <UsingTask AssemblyFile= "$(BuilderTasksPath)\halwayiTasks.dll" TaskName= "MetadataAppendEntryTask" />
   <UsingTask AssemblyFile= "$(BuilderTasksPath)\halwayiTasks.dll" TaskName= "CreateMocksInParallelTask" />
@@ -74,9 +74,9 @@ Please refer to Halwayi's license agreement for more details
       <Output PropertyName = "_macroFunctions" TaskParameter = "MacroFunctionsFound" />
     </MacroFunctionsParserTasks>-->
     
-    <FindMathcingMetadataTask File="%(MockableFilesItem.Identity)" RawMetaDataChunks="@(mockMetaDataItem)">
+    <FindMatchingMetadataTask File="%(MockableFilesItem.Identity)" RawMetaDataChunks="@(mockMetaDataItem)">
       <Output PropertyName= "_configMetaData" TaskParameter= "FoundMetaData" />
-    </FindMathcingMetadataTask>
+    </FindMatchingMetadataTask>
 
     <MetadataContainsEntryTask Metadata="$(_configMetaData)" Entry="--enforce_strict_ordering=true">
       <Output PropertyName= "_strictOrderingEnabled" TaskParameter= "Result" />

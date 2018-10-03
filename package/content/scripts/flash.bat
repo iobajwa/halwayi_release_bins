@@ -49,11 +49,20 @@ call load_environment
 			echo.
 			goto f_exit
 		) else (
-			set FeatureName=%~1
+			IF exist "%TargetsRoot%\%1.bat" (
+				set target=%1
+			) else (
+				set FeatureName=%~1
+			)
 		)
 	SHIFT
 	GOTO f_parse_parameter_flags
 :f_end_parse
+
+if ["%target%"] NEQ [""] (
+	echo '%target%' target..
+	call "%TargetsRoot%\%target%.bat"
+)
 
 
 	rem some sanity checking

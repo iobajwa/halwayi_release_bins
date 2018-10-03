@@ -65,11 +65,20 @@ pushd "%CD%"
 			popd
 			goto exit_script
 		) else (
-			set glob=%1
+			IF exist "%TargetsRoot%\%1.bat" (
+				set target=%1
+			) else (
+				set glob=%1
+			)
 		)
 		SHIFT
 	GOTO parse_parameter_flags
 :end_parse
+
+if ["%target%"] NEQ [""] (
+	echo '%target%' target..
+	call "%TargetsRoot%\%target%.bat"
+)
 
 if ["%var%"] NEQ [""] (
 	set variant=var "%var%"

@@ -55,6 +55,7 @@ Please refer to Halwayi's license agreement for more details
   <Import Project= "$(_ProjectFile)"/>
   <Import Project= "$(TargetsToolPath)\automock.targets"/>
   <Import Project= "$(TargetsToolPath)\cstub.targets"/>
+  <Import Project= "$(TargetsToolPath)\standin.targets"/>
   
   <UsingTask AssemblyFile= "$(BuilderTasksPath)\halwayiTasks.dll" TaskName= "TestRunnerGeneratorTask" />
   <UsingTask AssemblyFile= "$(BuilderTasksPath)\halwayiTasks.dll" TaskName= "CreateExpectationsTask" />
@@ -100,7 +101,9 @@ Please refer to Halwayi's license agreement for more details
                                                                                           _CreateFlavoursBinFolders;
                                                                                           _GenerateAnyRequiredMocks;
                                                                                           _SetupPropertiesForCStub;
+                                                                                          _SetupPropertiesForStandins;
                                                                                           _GenerateAnyRequiredStubs;
+                                                                                          _GenerateAnyRequiredCStandins;
                                                                                           _GenerateLinkFileForEachFlavour;
                                                                                           _GenerateCommonRunner;
                                                                                           _GenerateExpectationsFile;
@@ -342,6 +345,15 @@ Please refer to Halwayi's license agreement for more details
     </PropertyGroup>
     <MakeDir Directories="$(CStubGhostRoot)" Condition=" '$(BuildGhostAlso.ToLower())' == 'true' " />
     <MakeDir Directories="$(CStubNativeRoot)" Condition=" '$(BuildNativeAlso.ToLower())' == 'true' " />
+  </Target>
+
+  <Target Name="_SetupPropertiesForStandins">
+    <PropertyGroup>
+      <StandinGhostRoot>$(TestFileArtifactFolder)\Ghost</StandinGhostRoot>
+      <StandinNativeRoot>$(TestFileArtifactFolder)\$(NativeToolChainID)</StandinNativeRoot>
+    </PropertyGroup>
+    <MakeDir Directories="$(StandinGhostRoot)" Condition=" '$(BuildGhostAlso.ToLower())' == 'true' " />
+    <MakeDir Directories="$(StandinNativeRoot)" Condition=" '$(BuildNativeAlso.ToLower())' == 'true' " />
   </Target>
 
   <Target Name="_CreateFlavoursBinFolders" Outputs="%(Flavours.Identity)" Condition="'$(FlavourCount)' != '0'">

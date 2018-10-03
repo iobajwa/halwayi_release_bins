@@ -1,0 +1,16 @@
+
+vp_configs: default+neo2_rev1
+formats: hex, elf, map
+
+production:
+  - serial-tx
+  - power-button-state-test
+  - power-on-sequence
+  - idle-wheel-encoders
+  - estop-measure
+  - steering-encoder
+  - adc
+  - motion
+
+regressions:
+  - hwcan-tx

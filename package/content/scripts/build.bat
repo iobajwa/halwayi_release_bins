@@ -5,7 +5,7 @@ rem Please refer to Halwayi's license agreement for more details
 
 set ghost=
 set native=
-set target=releaseAll
+set halwayi_target=releaseAll
 set debug=
 set native_script_path=
 set exec_path=
@@ -32,19 +32,19 @@ call load_environment
 		    echo.
 			echo  Builds an image of the project using the active working context
 			echo.
-			echo     release            : builds the 'final' native image feature
+			echo     build            : builds the 'final' native image feature
 			echo.
-			echo     release debug      : builds the 'final' native image feature with debug
+			echo     build debug      : builds the 'final' native image feature with debug
 			echo                          configuration
 			echo.
-			echo     release f          : builds and flashes the 'final' native image feature
+			echo     build f          : builds and flashes the 'final' native image feature
 			echo                          by using the specified %FlashTool%
-			echo     release fp         : builds and flashes the 'final' native image feature
+			echo     build fp         : builds and flashes the 'final' native image feature
 			echo                          by enabling the power of %FlashTool%
 			echo.
-			echo     release view ghost : builds the 'view' ghost image feature
-			echo     release adc native f : builds and flashes the 'adc' feature native image
-			echo     release adc ide    : builds the ide project for 'adc' feature
+			echo     build view ghost : builds the 'view' ghost image feature
+			echo     build adc native f : builds and flashes the 'adc' feature native image
+			echo     build adc ide    : builds the ide project for 'adc' feature
 			echo.
 			echo     NOTES: 
 			echo           1. 'native' is the default image-type when none is specified
@@ -62,7 +62,7 @@ call load_environment
 		) else IF [%1]==[debug] (
 			set debug=ForDebug
 		) else IF [%1]==[clean] (
-			set target=cleanReleaseAll
+			set halwayi_target=cleanReleaseAll
 			set clean=true
 		) else IF [%1]==[ide] (
 			set build_ide=true
@@ -73,41 +73,47 @@ call load_environment
 			set platform=%~2
 			SHIFT
 		) else (
-			set feature_file=feature %1
-			set FeatureName=%~1
+			IF exist "%TargetsRoot%\%1.bat" (
+				set target=%1
+			) else (
+				rem treat this as a feature 
+				set feature_file=feature %1
+				set FeatureName=%~1
+			)
 		)
 	SHIFT
 	GOTO rv_parse_parameter_flags
 :rv_end_parse
 
-
-
-
-	rem display what we're going to do
+	rem display the context
+if ["%target%"] NEQ [""] (
+	echo '%target%' target..
+	call "%TargetsRoot%\%target%.bat"
+)
 if ["%var%"] NEQ [""] (
-	echo Releasing variant '%var%'..
+	echo '%var%' variant..
 	set var_chosen=var "%var%"
 )
 if ["%platform%"] NEQ [""] (
-	echo Releasing for '%platform%' platform..
+	echo '%platform%' platform..
 	set platform_chosen=platform "%platform%"
 )
 if ["%feature_file%"] NEQ [""] (
-	echo Releasing '%FeatureName%' feature..
+	echo '%FeatureName%' feature..
 )
 
 
 
 	rem some sanity checking
 if [%ghost%]==[] if [%native%]==[] (	
-	rem we do native release by default
+	rem we do native build by default
 	set native=native
 )
 
 
 	
-	rem build the release
-call halwayiWrapper.bat %native% %ghost% %target%%debug% %feature_file% %var_chosen% %platform_chosen%
+	rem build the thing
+call halwayiWrapper.bat %native% %ghost% %halwayi_target%%debug% %feature_file% %var_chosen% %platform_chosen%
 
 if %ERRORLEVEL% GTR 0 (
 	exit /b %ERRORLEVEL%

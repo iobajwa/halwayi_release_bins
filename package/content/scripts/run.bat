@@ -65,13 +65,23 @@ set xmlReport="--xml_report=%TestReportName%"
 		echo.
 		goto r_exit
 	) else (
-		set glob=%1
+		IF exist "%TargetsRoot%\%1.bat" (
+			set target=%1
+		) else (
+			rem treat this as a feature 
+			set glob=%1
+		)
 	)
 	SHIFT
 	GOTO parse_parameter_flags
 :end_parse
 
 cd %BinRoot%\tests
+if ["%target%"] NEQ [""] (
+	echo '%target%' target..
+	call "%TargetsRoot%\%target%.bat"
+)
+
 if ["%var%"] NEQ [""] (
 	set filter_variant=--variant=%var%
 )

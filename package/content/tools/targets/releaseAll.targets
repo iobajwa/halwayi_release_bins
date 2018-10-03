@@ -263,8 +263,10 @@ Please refer to Halwayi's license agreement for more details
 	</Target>
 
 	<Target Name="_TestIfNoSourceFound">
-		<Error Text= "No source Files (ghost) found." Condition= " !Exists(%(ClCompile.Identity)) AND '$(BuildGhostAsWell)' == 'true'" />
-		<Error Text= "No source Files (native) found." Condition= " !Exists(%(NativeCompile.Identity)) AND '$(BuildNativeAsWell)' == 'true'" />
+		<Error Text= "No source Files (ghost) found." Condition= " '@(ClCompile->Count())' == '0' AND '$(BuildGhostAsWell)' == 'true'" />
+		<Error Text= "No source Files (native) found." Condition= " '@(NativeCompile->Count())' == '0' AND '$(BuildNativeAsWell)' == 'true'" />
+		<Error Text= "Source file (ghost) doesn't exists '%(ClCompile.Identity)'" Condition= " !Exists(%(ClCompile.Identity)) AND '$(BuildGhostAsWell)' == 'true'" />
+		<Error Text= "Source file (native) doesn't exists '%(NativeCompile.Identity)'" Condition= " !Exists(%(NativeCompile.Identity)) AND '$(BuildNativeAsWell)' == 'true'" />
 	</Target>
 
 

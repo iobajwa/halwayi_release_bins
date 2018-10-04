@@ -44,9 +44,9 @@ Please refer to Halwayi's license agreement for more details
   -->
 
   <Target Name="_GenerateAnyRequiredStubs" DependsOnTargets="_DiscoverStubableFiles;
-                                                            _DiscoverStubConfigMetadata;
-                                                            _GenerateStubs;
-                                                            _GenerateStubSetupFiles">
+                                                             _DiscoverStubConfigMetadata;
+                                                             _GenerateStubs;
+                                                             _GenerateStubSetupFiles">
   </Target>
 
 
@@ -70,7 +70,6 @@ Please refer to Halwayi's license agreement for more details
 
 
   <Target Name="_DiscoverStubConfigMetadata" Outputs="$(StubPrefix)" Inputs= "%(StubableFilesItem.Identity)" Condition= " '$(StubableFilesCount)' != '0' ">
-
     <FindMatchingMetadataTask File="%(StubableFilesItem.Identity)" RawMetaDataChunks="@(StubMetaDataItem)">
       <Output PropertyName= "_processedConfigMetaData" TaskParameter= "FoundMetaData" />
     </FindMatchingMetadataTask>

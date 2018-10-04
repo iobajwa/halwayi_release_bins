@@ -7,7 +7,7 @@ set clean=false
 set build=false
 set testFile=
 set onlyFileName=
-set target=
+set msbuild_target=
 set xmlReport=
 set buildNative=false
 set buildGhost=false
@@ -63,10 +63,10 @@ set run_after_test=true
 			set testFile=%2
 			IF [%2]==[] (
 				echo Cleaning all..
-				set target=cleanAll
+				set msbuild_target=cleanAll
 			) else (
 				echo Cleaning Test: %2..
-				set target=clean
+				set msbuild_target=clean
 			)
 			SHIFT
 		) else IF [%1]==[build] ( 
@@ -75,25 +75,25 @@ set run_after_test=true
 			set onlyFileName=%~n2
 			IF [%2]==[] (
 				rem echo Building all..
-				set target=buildAll
+				set msbuild_target=buildAll
 			) else (
 				rem echo Building Test: %2..
-				set target=build
+				set msbuild_target=build
 			)
 			SHIFT
 		) else IF [%1]==[releaseAll] (
-			set target=ReleaseAll
+			set msbuild_target=ReleaseAll
 			set releaseOrDebugBuild=true
 			set build=true
 		) else IF [%1]==[releaseAllForDebug] (
-			set target=ReleaseAllForDebug
+			set msbuild_target=ReleaseAllForDebug
 			set releaseOrDebugBuild=true
 			set build=true
 		) else IF [%1]==[cleanReleaseAll] (
-			set target=CleanReleaseAll
+			set msbuild_target=CleanReleaseAll
 			set clean=true
 		) else IF [%1]==[cleanReleaseAllForDebug] (
-			set target=CleanReleaseAllForDebug
+			set msbuild_target=CleanReleaseAllForDebug
 			set clean=true
 		) else IF [%1]==[quiet] (
 			set verbosity=q
@@ -182,7 +182,7 @@ if %clean%==false if %build%==false (
 	GOTO exit_script
 )
 
-msbuild "%HalwayiToolsRoot%\project.builder" /v:%verbosity% /nologo /t:%target% /p:ProjectFile="%projectToLoad%";BuildNative=%buildNative%;GlobPattern=%testFile%;BuildGhost=%buildGhost%;SelectedVariant="%selectedVariant%";BuildFeature="%featureToBuild%";FeatureName=%FeatureName%;SelectedPlatform=%selectedPlatform%;BuildIDE=%build_ide%
+msbuild "%HalwayiToolsRoot%\project.builder" /v:%verbosity% /nologo /t:%msbuild_target% /p:ProjectFile="%projectToLoad%";BuildNative=%buildNative%;GlobPattern=%testFile%;BuildGhost=%buildGhost%;SelectedVariant="%selectedVariant%";BuildFeature="%featureToBuild%";FeatureName=%FeatureName%;SelectedPlatform=%selectedPlatform%;BuildIDE=%build_ide%
 
 
 if %ERRORLEVEL% GTR 0 (

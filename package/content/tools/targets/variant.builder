@@ -540,20 +540,20 @@ Please refer to Halwayi's license agreement for more details
 	<Target Name="_DeleteArtifactAndBinFoldersForSingleTest" Outputs="%(TestFiles.Identity)">
 
 		<PropertyGroup>
-			<!-- <GhostBinDirToRemove>%(TestFiles.BinFolder)</GhostBinDirToRemove> -->
+			<GhostBinDirToRemove>%(TestFiles.BinFolder)</GhostBinDirToRemove>
 			<GhostArtifactDirToRemove>%(TestFiles.ArtifactFolder)\ghost</GhostArtifactDirToRemove>
-			<!-- <NativeBinDirToRemove>%(TestFiles.BinFolder)</NativeBinDirToRemove> -->
+			<NativeBinDirToRemove>%(TestFiles.BinFolder)</NativeBinDirToRemove>
 			<NativeArtifactDirToRemove>%(TestFiles.ArtifactFolder)\$(_NativeToolChain)</NativeArtifactDirToRemove>
 		</PropertyGroup>
 
-		<!-- <RemoveDir Directories="$(GhostBinDirToRemove)" /> -->
+		<RemoveDir Directories="$(GhostBinDirToRemove)" />
 		<RemoveDir Directories="$(GhostArtifactDirToRemove)" Condition=" '$(BuildGhostAsWell)' == 'true' " />
-		<!-- <RemoveDir Directories="$(NativeBinDirToRemove)" /> -->
+		<RemoveDir Directories="$(NativeBinDirToRemove)" />
 		<RemoveDir Directories="$(NativeArtifactDirToRemove)" Condition=" '$(BuildNativeAsWell)' == 'true' " />
 		
-		<!-- <Message Text="Deleted: $(GhostBinDirToRemove)" Importance="high" /> -->
+		<Message Text="Deleted: $(GhostBinDirToRemove)" Importance="high" />
 		<Message Text="Deleted: $(GhostArtifactDirToRemove)" Importance="high" Condition=" '$(BuildGhostAsWell)' == 'true' " />
-		<!-- <Message Text="Deleted: $(NativeBinDirToRemove)" Importance="high" /> -->
+		<Message Text="Deleted: $(NativeBinDirToRemove)" Importance="high" />
 		<Message Text="Deleted: $(NativeArtifactDirToRemove)" Importance="high" Condition=" '$(BuildNativeAsWell)' == 'true' " />
 
 	</Target>

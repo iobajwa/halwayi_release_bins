@@ -68,69 +68,6 @@ Please refer to Halwayi's license agreement for more details
     </StandinGeneratorTask>
 
     <Message Text="@(StandinsFilesItem)" />
-    <!-- <Error Text="kaboom!" /> -->
-  </Target>
-
-
-  <Target Name="_DiscoverStubConfigMetadata" Outputs="$(StubPrefix)" Inputs= "%(StandinsFilesItem.Identity)" Condition= " '$(StandinsFileCount)' != '0' ">
-
-    <FindMatchingMetadataTask File="%(StandinsFilesItem.Identity)" RawMetaDataChunks="@(StandinMetaDataItem)">
-      <Output PropertyName= "_processedConfigMetaData" TaskParameter= "FoundMetaData" />
-    </FindMatchingMetadataTask>
-
-    <ItemGroup>
-      <StandinsFilesItem Condition="'%(StandinsFilesItem.Identity)' == '%(Identity)'" >
-        <Metadata>$(_processedConfigMetaData)</Metadata>
-      </StandinsFilesItem>
-    </ItemGroup>
-  </Target>
-
-  
-  
-  <Target Name="_GenerateStubs" DependsOnTargets="_GenerateStubsForGhost;_GenerateStubsForNative" Condition=" '$(StandinsFileCount)' != '0' ">
-    <Message Text="Generated $(StandinsFileCount) stub(s)." Importance="Normal" />
-  </Target>
-
-  <Target Name= "_GenerateStubsForGhost" Condition="'$(BuildGhostAlso)' == 'true'">
-    <CreateStubsInParallelTask StubableFiles="@(StandinsFilesItem)" 
-                               Paths="@(GhostIncludedPathsItem)" 
-                               TestFile="$(TestFileFullname)" 
-                               ToolPath="$(CStubPath)\cstub.exe" 
-                               StubPrefix="$(StubPrefix)" 
-                               OutputPath="$(CStubGhostRoot)" 
-                               MaximumParallelExecutions="$(CoresUsage)" 
-                               TimeoutPeriod="3000"
-                               CTypesHeader="$(CTypesFile)"
-                               />
-  </Target>
-
-  <Target Name= "_GenerateStubsForNative" Condition="'$(BuildNativeAlso)' == 'true'">
-    <CreateStubsInParallelTask StubableFiles="@(StandinsFilesItem)" 
-                               Paths="@(NativeIncludedPathsItem)" 
-                               TestFile="$(TestFileFullname)" 
-                               ToolPath="$(CStubPath)\cstub.exe" 
-                               StubPrefix="$(StubPrefix)" 
-                               OutputPath="$(CStubNativeRoot)" 
-                               MaximumParallelExecutions="$(CoresUsage)" 
-                               CTypesHeader="$(CTypesFile)"
-                               TimeoutPeriod="3000" />
-  </Target>
-
-
-  <Target Name="_GenerateStubSetupFiles" DependsOnTargets= "_GenerateStubSetupFilesForGhost;_GenerateStubSetupFilesForNative" />
-
-  <Target Name="_GenerateStubSetupFilesForGhost" Condition= " '$(BuildGhostAlso)' == 'True' " Inputs="$(TestFileFullname)" Outputs="$(CStubGhostRoot)\$(CStubManagementFile)">
-    <ItemGroup>
-      <GeneratedStubFilesGhost Include= "$(CStubGhostRoot)\**\$(StubPrefix)*.c" />
-    </ItemGroup>
-    <StubManagementGeneratorTask GeneratedFiles="@(GeneratedStubFilesGhost)" BasePath="$(CStubGhostRoot)" OutputFile="$(CStubGhostRoot)\$(CStubManagementFile)" />
-  </Target>
-
-  <Target Name="_GenerateStubSetupFilesForNative" Condition= "$(BuildNativeAlso) == 'True'" Inputs="$(TestFileFullname)" Outputs="$(CStubNativeRoot)\$(CStubManagementFile)">
-    <ItemGroup>
-      <GeneratedStubFilesNative Include= "$(CStubNativeRoot)\**\$(StubPrefix)*.c" />
-    </ItemGroup>
-    <StubManagementGeneratorTask GeneratedFiles="@(GeneratedStubFilesNative)" BasePath="$(CStubNativeRoot)" OutputFile="$(CStubNativeRoot)\$(CStubManagementFile)" />
   </Target>
 
 

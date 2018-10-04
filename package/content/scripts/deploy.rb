@@ -1,12 +1,45 @@
 
 require 'yaml'
 require 'fileutils'
-class Symbol
-  def with(*args, &block)
-    ->(caller, *rest) { caller.send(self, *rest, *args, &block) }
-  end
+
+usage_text = "
+A simple utility to deploy bundles. 'bundles' are halwayi's way of looking at deployment packages.
+  
+  deploy <bundle name(s):optional> <flags: optional>
+
+  options: 
+    
+  	--deploy-template : 
+
+    --path          : the path to deploy the images listed in the deploy.yaml
+                      default: $build_root/deploy
+                      aliases: -p
+
+    --build-scripts : generates the build scripts required to build the bundle(s)
+                      aliases: -b, --build_scripts
+
+    --clean         : cleans the deployment
+                      aliases: -c
+
+    --list          : lists the images that will be deployed for the specified (or all) bundle(s)
+                      aliases: -l, --ld
+
+    --list-deep     : lists the full details of the images (variant, platform and file formats)
+                      that will be deployed for the specified (or all) bundle(s)
+                      aliases: -d, --list_deep
+
+    --verbose       : prints a lot of extra information while doing the job
+                      aliases: -v
+
+    --help          : -_-
+                      aliases: -h, ?, -?, --?
+"
+
+class Symbol def with(*args, &block) ->(caller, *rest) { caller.send(self, *rest, *args, &block) } end end
+class ::Hash def deep_merge(second) merger = proc { |key, v1, v2| Hash === v1 && Hash === v2 ? v1.merge(v2, &merger) : v2 }; self.merge(second, &merger); end
 end
-def error_log(msg) STDERR.puts(msg); end
+def error_log(msg) STDERR.puts(msg); $encountered_error=true end
+def exit_if_error() exit(-1) if $encountered_error; end
 def error(msg,error_code=-1) error_log(msg); exit(error_code); end
 def gen_batch_file_prefix(task) return task.gsub(' ', '-'); end
 def parse_array_from_string(str) return str.split(' ').map(&:chomp.with(',')); end
@@ -72,26 +105,54 @@ def delete_shell_script task, bundle_name, temp_script_root, batch_file_prefix=n
 	end
 	return nil
 end
+def parse_target target_root, target_name
+	target_batch_file = File.join target_root, target_name + ".bat"
+	raise "'#{target_name}' target not found" unless File.exist? target_batch_file
+	lines = File.readlines target_batch_file
+	variant, platform = nil, nil
+	lines.each { |line|
+		l = line.strip
+		if line.start_with?("set var=") or line.start_with?("set \"var=")
+			variant = line.gsub("set var=", '').gsub("set \"var=", '').gsub('"', '').strip
+			variant = nil if variant == ''
+		elsif line.start_with?("set platform=") or line.start_with?("set \"platform=")
+			platform = line.gsub("set platform=", '').gsub("set \"platform=", '').gsub('"', '').strip
+			platform = nil if platform == ''
+		end
+	}
+	return nil unless variant and platform
+	return "#{variant}+#{platform}"
+end
 
-
-# begin
-# 	first_variant = `list first_variant`.strip
-# rescue Exception => e
-# end
 
 # parse, sanity check and sanitize the command line args
-bundles_filtered = []
-verbose                    = false
-only_gen_scripts_requested = false
-clean_action_requested     = false
-ARGV.each { |e|
-	case e.gsub /^[-]*/, ''
+bundles_filtered  = []
+deploy_path       = nil
+verbose           = false
+requested_actions = { }
+skip = false
+ARGV.each_with_index { |e, i|
+	if skip
+		skip = false
+		next
+	end
+	case e.gsub(/^[-]*/, '').gsub('-', '_')
 	when "v", "verbose"
 		verbose = true
-	when "s", "scripts"
-		only_gen_scripts_requested = true
+	when "b", "build_scripts"
+		requested_actions[:gen_scripts] = true
 	when "c", "clean"
-		clean_action_requested = true
+		requested_actions[:clean] = true
+	when "l", "list"
+		requested_actions[:list] = true
+	when "d", "list_deep", "ld"
+		requested_actions[:list_deep] = true
+	when "p", "path"
+		deploy_path = ARGV[i + 1]
+		skip = true
+	when "?", "h", "help"
+		puts usage_text
+		exit
 	else
 		bundles_filtered.push e
 	end
@@ -103,56 +164,92 @@ bin_root         = ENV['BinRoot']
 temp_script_root = ENV['BuildMagicRoot']
 artifacts_root   = ENV['ArtifactsRoot']
 magic_root       = ENV['MagicRoot']
+target_root      = ENV['TargetsRoot']
 # sanity check
 error "ProjectRoot not defined."    unless project_root
 error "BinRoot not defined."        unless bin_root
 error "BuildMagicRoot not defined." unless temp_script_root
 error "ArtifactsRoot not defined."  unless artifacts_root
+error "target_root not defined."    unless target_root
 deploy_file = File.join magic_root, "deploy.yaml"
-deploy_path = File.join artifacts_root, "deploy"
-error "deploy.yaml not found in MagicRoot ('#{magic_root}')." unless File.exist? deploy_file
+unless deploy_path
+	puts "no deploy path provided, using default" if verbose
+	deploy_path = File.join artifacts_root, "deploy"
+	# create the root deploy directory unless it exists
+	FileUtils.mkdir_p deploy_path unless Dir.exists? deploy_path
+end
+# ensure the paths exist
+error "path doesn't exist: '#{deploy_path}'"                    unless Dir.exist? deploy_path
+error "temp script folder doesn't exist: '#{temp_script_root}'" unless Dir.exist? temp_script_root
+error "targets folder doesn't exist: '#{target_root}'"          unless Dir.exist? target_root
+error "deploy.yaml not found in MagicRoot ('#{magic_root}')."   unless File.exist? deploy_file
 # sanitize
 project_root     = project_root.gsub('\\', '/')
 bin_root         = bin_root.gsub('\\', '/')
 temp_script_root = temp_script_root.gsub('\\', '/')
 artifacts_root   = artifacts_root.gsub('\\', '/')
 magic_root       = magic_root.gsub('\\', '/')
+deploy_path      = deploy_path.gsub('\\', '/')
+target_root      = target_root.gsub('\\', '/')
+
+
+if verbose
+	puts "deploy path    : #{deploy_path}"
+	puts "project root   : #{project_root}"
+	puts "bin root       : #{bin_root}"
+	puts "artifacts root : #{artifacts_root}"
+	puts "magic root     : #{magic_root}"
+	puts "deploy path    : #{deploy_path}"
+end
+
+
 
 ## parse, sanity check and sanitize deploy.yaml ##
-user_meta = YAML.load_file deploy_file
-user_meta = { "default" => user_meta } if user_meta.class != Hash
+known_meta = ["variants", "platforms", "vp_configs", "formats", "targets"]
+begin
+	user_meta = YAML.load_file deploy_file
+rescue Exception => e
+	error_log "error reading yaml file:"
+	error e.message
+end
+user_meta  = { "default" => user_meta } if user_meta.class != Hash
 global_variants   = sanitize_array_meta user_meta["variants"]
 global_platforms  = sanitize_array_meta user_meta["platforms"]
 global_vp_configs = sanitize_array_meta user_meta["vp_configs"]
 global_formats    = sanitize_array_meta user_meta["formats"]
+global_targets    = sanitize_array_meta user_meta["targets"]
+global_targets    = [] unless global_targets
 global_vp_configs = [] unless global_vp_configs
 global_variants.each{ |v| global_platforms.each{ |pl| global_vp_configs.push "#{v}+#{pl}" } if global_platforms } if global_variants
 global_formats = [".hex"] if global_formats == nil or global_formats.length == 0
-
 deploy_bundles = {}
+parsed_targets_repo = {}
 user_meta.each_pair { |bundle_name, bundle_meta|
-	next if bundle_name == "variants" or bundle_name == "platforms" or bundle_name == "vp_configs" or bundle_name == "formats"
-	# parse the deploy bundle
+	next if known_meta.include? bundle_name
 
+	# parse the deploy bundle
 	bins = {}
 	if bundle_meta.class == Array
-		bundle_meta.each { |b| bins[b] = { :vp_configs => global_vp_configs, :formats => global_formats } }
+		bundle_meta.each { |b| bins[b] = { :vp_configs => global_vp_configs, :targets => global_targets, :formats => global_formats } }
 	elsif bundle_meta.class == Hash
 		local_variants   = sanitize_array_meta bundle_meta["variants"]
 		local_platforms  = sanitize_array_meta bundle_meta["platforms"]
 		local_vp_configs = sanitize_array_meta bundle_meta["vp_configs"]
 		local_formats    = sanitize_array_meta bundle_meta["formats"]
-		error "no bins listed for '#{bundle_name}' bundle" unless bundle_meta.include? "bins"
+		local_targets    = sanitize_array_meta bundle_meta["targets"]
+		error "'#{bundle_name}' bundle: no bins listed" unless bundle_meta.include? "bins"
 		bundle_meta["bins"].each { |b|
-			applicable_variants  = local_variants
-			applicable_variants  = global_variants unless applicable_variants
-			applicable_platforms = local_platforms
-			applicable_platforms = global_platforms unless applicable_platforms
-			applicable_formats   = local_formats
-			applicable_formats   = global_formats if local_formats == nil || local_formats.length == 0
-			applicable_configs   = local_vp_configs unless global_vp_configs.length > 0
-			applicable_configs   = [] unless applicable_configs
-			vp_configs           = []
+			applicable_targets    = local_targets
+			applicable_targets    = global_targets   unless applicable_targets
+			applicable_variants   = local_variants
+			applicable_variants   = global_variants  unless applicable_variants
+			applicable_platforms  = local_platforms
+			applicable_platforms  = global_platforms unless applicable_platforms
+			applicable_formats    = local_formats
+			applicable_formats    = global_formats if local_formats == nil || local_formats.length == 0
+			applicable_configs    = local_vp_configs unless global_vp_configs.length > 0
+			applicable_configs    = [] unless applicable_configs
+			applicable_vp_configs = []
 
 			if b.class == Hash
 				bin_name = b.keys[0]
@@ -160,8 +257,9 @@ user_meta.each_pair { |bundle_name, bundle_meta|
 				v = b[bin_name]
 				t = []
 				if v.class == String
-					vp_configs = parse_array_from_string v
+					applicable_vp_configs = parse_array_from_string v
 				elsif v.class == Hash
+					i_targets    = sanitize_array_meta v["targets"]
 					i_vp_configs = sanitize_array_meta v["vp_configs"]
 					if i_vp_configs == nil
 						t[0] = sanitize_array_meta v["variants"]
@@ -179,6 +277,7 @@ user_meta.each_pair { |bundle_name, bundle_meta|
 					e = v["formats"]
 					iformats = parse_array_from_string e
 					applicable_formats = iformats if iformats and iformats.length > 0
+					applicable_targets = i_targets if i_targets
 				end
 				applicable_variants  = t[0] if t[0]
 				applicable_platforms = t[1] if t[1]
@@ -187,8 +286,8 @@ user_meta.each_pair { |bundle_name, bundle_meta|
 			end
 
 			# create a list of variant+platform configs
-			applicable_variants.each{ |v| applicable_platforms.each{ |pl| vp_configs.push "#{v}+#{pl}" } } if vp_configs.length == 0 && applicable_variants && applicable_platforms
-			vp_configs = applicable_configs if vp_configs.length == 0
+			applicable_variants.each{ |v| applicable_platforms.each{ |pl| applicable_vp_configs.push "#{v}+#{pl}" } } if applicable_vp_configs.length == 0 && applicable_variants && applicable_platforms
+			applicable_vp_configs = applicable_configs if applicable_vp_configs.length == 0
 
 			# ensure all formats begin with '.'
 			t = []
@@ -197,9 +296,33 @@ user_meta.each_pair { |bundle_name, bundle_meta|
 			applicable_formats = global_formats if applicable_formats == nil || applicable_formats.length == 0
 
 			# we now have a bin meta
-			bins[bin_name] = { :vp_configs => vp_configs, :formats => applicable_formats }
+			bins[bin_name] = { :vp_configs => applicable_vp_configs, :targets => applicable_targets, :formats => applicable_formats }
 		}
+
 	end
+
+	# parse the target definitions
+	bins.each_pair { |bname, bmeta|
+		vp_configs = bmeta[:vp_configs]
+		targets_parsed = {}
+		bmeta[:targets].each { |t|
+			begin
+				target_vp_config = parsed_targets_repo[t]
+				unless target_vp_config
+					target_vp_config = parse_target target_root, t
+					parsed_targets_repo[t] = target_vp_config
+				end
+				if target_vp_config 
+					vp_configs.push target_vp_config unless vp_configs.include? target_vp_config
+					targets_parsed[t] = target_vp_config
+				end
+			rescue Exception => e
+				error "'#{bundle_name}': " + e.message
+			end
+		}
+		bmeta[:targets]    = targets_parsed
+		bmeta[:vp_configs] = vp_configs.flatten
+	}
 
 	deploy_bundles[bundle_name] = { :bins => bins }
 }
@@ -207,10 +330,12 @@ user_meta.each_pair { |bundle_name, bundle_meta|
 # filter bundles and ensure user provided meaningful filter
 applied_filter = false
 unless bundles_filtered.length == 0
-	bundles_filtered.each { |b| error "bundle '#{b}' not found." unless deploy_bundles.keys.include? b }
-	deploy_bundles    = deploy_bundles.select { |k, v| bundles_filtered.include? k }
+	bundles_filtered.each { |b| error_log "'#{b}' ?" unless deploy_bundles.keys.include? b }
+	exit_if_error
+	deploy_bundles = deploy_bundles.select { |k, v| bundles_filtered.include? k }
 	applied_filter = true
 end
+
 
 error "nothing to do." if deploy_bundles.length == 0    # sanity check
 
@@ -220,18 +345,27 @@ deploy_bundles.each_pair { |bundle_name, bundle_meta|
 		images     = {}
 		b_path     = File.join bin_root, "features"
 		vp_configs = bin_meta[:vp_configs]
+		targets    = bin_meta[:targets]
 		vp_late_discovery = false
-		if vp_configs.length == 0
-			r_path      = "#{bin_name}/release/"
-			full_path   = File.join b_path, r_path
-    		images["*"] = { :full_path => full_path, :relative_path => r_path, :base_path => b_path }
-    		vp_late_discovery = true
-		else
+		# target gets preference over vp_configs
+		if targets.length > 0
+			targets.each_pair { |tname, tconfig|
+				r_path          = "#{bin_name}/release/#{tconfig}"
+				full_path       = File.join b_path, r_path
+				images[tconfig] = { :full_path => full_path, :relative_path => r_path, :base_path => b_path }
+			}
+		elsif vp_configs.length > 0
 			vp_configs.each { |vc|
 				r_path     = "#{bin_name}/release/#{vc}"
 				full_path  = File.join b_path, r_path
-	    		images[vc] = { :full_path => full_path, :relative_path => r_path, :base_path => b_path }
+				images[vc] = { :full_path => full_path, :relative_path => r_path, :base_path => b_path }
 			}
+		elsif vp_configs.length == 0
+			r_path      = "#{bin_name}/release/"
+			full_path   = File.join b_path, r_path
+			images["*"] = { :full_path => full_path, :relative_path => r_path, :base_path => b_path }
+			vp_late_discovery = true
+		else
 		end
 		bin_meta[:vp_late_discovery] = vp_late_discovery
 		bin_meta[:images] = images
@@ -240,7 +374,7 @@ deploy_bundles.each_pair { |bundle_name, bundle_meta|
 }
 
 ## clean, if requested ##
-if clean_action_requested
+if requested_actions.include?(:clean)
 
 	if applied_filter
 		deploy_bundles.each_pair { |name, meta| 
@@ -260,6 +394,7 @@ if clean_action_requested
 	exit
 end
 
+
 ## generate scripts (always) ##
 deploy_bundles.each_pair { |k, v| 
 	f = create_shell_script "build", k, v, temp_script_root
@@ -270,8 +405,19 @@ deploy_bundles.each_pair { |k, v|
 
 
 
-exit if only_gen_scripts_requested
-## deploy, otherwise ##
+## generate scripts and exit, if requested ##
+exit if requested_actions.include?(:gen_scripts)
+
+
+## list, if requested ##
+if requested_actions.include?(:list)
+	deploy_bundles.each_pair { |name, meta|
+		puts "", "#{name}:"
+		meta[:bins].each_pair { |bin_name, _|  puts "  - #{bin_name}" }
+	}
+	exit
+end
+
 
 
 # ensure all the requested bins exist
@@ -298,6 +444,32 @@ end
 
 
 
+## list-deep, if requested ##
+if requested_actions.include?(:list_deep)
+	deploy_bundles.each_pair { |name, meta|
+		puts "", "#{name}:"
+		meta[:bins].each_pair { |bin_name, bin_meta| 
+			idescription = []
+			bin_meta[:images].each_pair { |iname, _| idescription.push "#{iname}: #{bin_meta[:formats]}" }
+			if idescription.length ==  1
+				puts "  - #{bin_name} : #{idescription[0]}"
+			else
+				puts "  - #{bin_name}"
+				idescription.each { |l| puts "    - #{l}" }
+			end
+
+		}
+	}
+	exit
+end
+
+
+##
+## deploy, otherwise ##
+##
+
+
+
 # create a list of files for each bundle.image to deploy
 
 def find_files path, formats, base_path
@@ -309,7 +481,7 @@ def find_files path, formats, base_path
 			files.each { |f|
 				fname         = File.basename f
 				relative_path = File.dirname  f
-				relative_path.gsub! base_path, ''
+				relative_path.gsub! base_path + "/", ''
 				deploy_rpath = relative_path.gsub /(\/|\\)release/i, ''
 				files_found[fname] = { :file => f, :path => path, :relative_path => relative_path, :deploy_rpath => deploy_rpath }
 			}
@@ -367,8 +539,7 @@ deploy_bundles.each_pair { |name, bundle_meta|
 
 # copy the discovered files
 
-# create the root deploy directory unless it exists
-FileUtils.mkdir_p deploy_path unless Dir.exists? deploy_path
+
 # copy each image to it's unique folder
 counter = 0
 deploy_bundles.each_pair { |n, m|
@@ -403,25 +574,45 @@ deploy_bundles.each_pair { |n, m|
 # generate meta files the describe the bundles
 deploy_bundles.each_pair { |bundle_name, bundle_meta|
 	
-	bins_dmeta = {}
+	# map all the images to targets
+	targets_image_map = {}
+	parsed_targets_repo.each_pair { |t, v| targets_image_map[t] = {} }
+	# targets_image_map = { "*" => {} } if targets_image_map.length == 0
+
 	bundle_meta[:bins].each_pair { |bin_name, bin_meta|
 		image_dmeta = {}
+		targets = bin_meta[:targets]
 		bin_meta[:images].each { |iname, imeta|
 			files_dmeta = {}
 			imeta[:files].each { |fname, fmeta|
 				files_dmeta[fname] = fmeta[:deploy_rpath]
 			}
+			if targets.length > 0
+				targets.each_pair { |t,m|
+					next unless m == iname
+					targets_image_map[t] = targets_image_map[t].deep_merge( { bin_name => { iname => files_dmeta } } ) 
+				}
+			else
+				map = targets_image_map[iname]
+				map = {} unless map
+				map = map.deep_merge( { bin_name => { iname => files_dmeta } } )
+				targets_image_map[iname] = map
+			end
 			image_dmeta[iname] = files_dmeta
 		}
-		bins_dmeta[bin_name] = image_dmeta
 	}
 
-	deployed_bundle_meta = { "name" => bundle_name, "bins" => bins_dmeta }
-	
+	final_targets_image_map = {}
+	targets_image_map.each_pair { |t,m|
+		next if m == {}
+		final_targets_image_map[t] = m
+	}
+
+	deployed_bundle_meta = { "name" => bundle_name, "targets" => final_targets_image_map }
+
 	file_name = File.join bundle_meta[:deploy_path], "bundle.yaml"
 	create_file file_name, deployed_bundle_meta.to_yaml
 }
-
 
 summary = "deployed #{deploy_bundles.length} bundles."
 summary = "\n" + summary + ". involving #{counter} files." if verbose

@@ -1,16 +1,17 @@
 
-vp_configs: default+neo2_rev1
+# vp_configs: var1+platform1, var2+platform2
+targets: machine1, machine2
 formats: hex, elf, map
+# bins_root: bin
 
 production:
-  - serial-tx
-  - power-button-state-test
-  - power-on-sequence
-  - idle-wheel-encoders
-  - estop-measure
-  - steering-encoder
+  - feature1
+  - feature2
   - adc
-  - motion
 
-regressions:
-  - hwcan-tx
+board_bring_up:
+  targets: machine3
+  bins:
+    - feature3
+    - feature4
+    

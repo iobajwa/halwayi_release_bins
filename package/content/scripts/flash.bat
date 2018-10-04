@@ -141,8 +141,8 @@ IF ["%CPU%"]==[""] (
 set variant_platform=%var%+%platform_to_flash%
 set exec_path="%BinRoot%\features\%FeatureName%\%image_type%\%variant_platform%\%project_name%.exe"
 set native_exec_path="%BinRoot%\features\%FeatureName%\%image_type%\%variant_platform%\%project_name%.hex"
-set mdb_script="%ArtifactsRoot%\etc\%variant_platform%_%FeatureName%_%image_type%_pk3_mdb.txt"
-set jlink_script="%ArtifactsRoot%\etc\%variant_platform%_%FeatureName%_%image_type%_jlink.txt"
+set mdb_script="%ArtifactsRoot%\etc\%FeatureName%_%variant_platform%_%image_type%_pk3_mdb.txt"
+set jlink_script="%ArtifactsRoot%\etc\%FeatureName%_%variant_platform%_%image_type%_jlink.txt"
 
 if exist "%mdb_script%" (
 	del "%mdb_script$"

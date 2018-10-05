@@ -6,6 +6,7 @@ set ProjectRoot=%CD%\..\..\..\tandoor
 set ToolsRoot=%CD%\..\tools
 set HalwayiToolsRoot=%CD%\..
 set ScriptsRoot=%ProjectRoot%\scripts
+set MagicRoot=%ScriptsRoot%
 set CodeRoot=%ProjectRoot%\code
 set FeatureCodeRoot=%CodeRoot%\features
 set FeatureSourceName=main.c
@@ -16,6 +17,7 @@ set RecipesRoot=%ProjectRoot%\recipes
 set FeaturesRoot=%ProjectRoot%\features
 set ProjectFile=%ProjectRoot%\project.properties
 set GhostToolchain=gcc
+set TargetsRoot=%MagicRoot%\targets
 rem set GhostToolchain=vcc
 
 set FlashTool=jlink

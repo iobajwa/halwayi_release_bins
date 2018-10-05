@@ -68,6 +68,7 @@ Please refer to Halwayi's license agreement for more details
                       FeatureFilesRoot="$(FeaturesRoot)"
                       SourcePaths="$(CodeRoot)\source"
                       FeatureFileExtension="$(FeatureFileExtension)"
+                      TargetsRoot="$(TargetsRoot)"
                       Condition=" '$(Handeled)' != 'true' "/>
   </Target>
 

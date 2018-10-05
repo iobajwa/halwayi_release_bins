@@ -14,6 +14,7 @@ set DocsRoot=%ProjectRoot%\docs
 set ToolsRoot=%ProjectRoot%\tools
 set HalwayiToolsRoot=%ToolsRoot%\halwayi
 set ScriptsRoot=%ProjectRoot%\scripts
+set MagicRoot=%ScriptsRoot%
 set TargetsRoot=%MagicRoot%\targets
 set CodeRoot=%ProjectRoot%\code
 set CodeLibRoot=%CodeRoot%\lib

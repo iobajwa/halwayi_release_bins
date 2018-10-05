@@ -36,8 +36,7 @@ A simple utility to deploy bundles. 'bundles' are halwayi's way of looking at de
 "
 
 class Symbol def with(*args, &block) ->(caller, *rest) { caller.send(self, *rest, *args, &block) } end end
-class ::Hash def deep_merge(second) merger = proc { |key, v1, v2| Hash === v1 && Hash === v2 ? v1.merge(v2, &merger) : v2 }; self.merge(second, &merger); end
-end
+class ::Hash def deep_merge(second) merger = proc { |key, v1, v2| Hash === v1 && Hash === v2 ? v1.merge(v2, &merger) : v2 }; self.merge(second, &merger); end end
 def error_log(msg) STDERR.puts(msg); $encountered_error=true end
 def exit_if_error() exit(-1) if $encountered_error; end
 def error(msg,error_code=-1) error_log(msg); exit(error_code); end

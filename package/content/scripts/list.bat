@@ -21,12 +21,16 @@ call load_environment
 			echo  Know project properties directly from the command line
 			echo.
 			echo     project_name
-			echo     context        : active variant+platform configuration
+			echo     context        : active target 'variant+platform' configuration
 			echo.
 			echo     variants
 			echo     variant_count
 			echo     first_variant
 			echo     release_cpu
+			echo     test_cpu
+			echo.
+			echo     targets
+			echo     target_names
 			echo.
 			echo     platforms      : platforms shared by all variants if var is unspecified,
 			echo                      platforms specific to the specified var otherwise.
@@ -57,7 +61,7 @@ pushd "%CD%"
 cd %ProjectRoot%
 set project_file=%ProjectRoot%\project.properties
 
-msbuild "%HalwayiToolsRoot%\project.query" /v:m /nologo /p:FieldToQuery=%field%;SelectedVariant="%var%";SelectedPlatform="%platform%";ProjectFile="%project_file%"
+msbuild "%HalwayiToolsRoot%\project.query" /v:m /nologo /p:FieldToQuery=%field%;SelectedTarget="%target%";SelectedVariant="%var%";SelectedPlatform="%platform%";ProjectFile="%project_file%"
 
 popd
 if %ERRORLEVEL% GTR 0 exit /b %ERRORLEVEL%

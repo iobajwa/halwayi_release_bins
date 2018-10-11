@@ -11,6 +11,7 @@ Please refer to Halwayi's license agreement for more details
   <PropertyGroup>
     <!-- Required Parameters -->
     <FieldToQuery></FieldToQuery>
+    <SelectedTarget></SelectedTarget>
     <SelectedVariant></SelectedVariant>
     <SelectedPlatform></SelectedPlatform>
 
@@ -56,6 +57,7 @@ Please refer to Halwayi's license agreement for more details
     </PropertyGroup>
     <Message Text="$(ProjectName)" Importance="high" Condition=" '$(Handeled)' =='true' "/>
     <ProjectQueryTask Field="$(FieldToQuery)" 
+                      SelectedTarget="$(SelectedTarget)"
                       SelectedVariant="$(SelectedVariant)" 
                       SelectedPlatform="$(SelectedPlatform)" 
                       Variants="@(VariantsBatch)"

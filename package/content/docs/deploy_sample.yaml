@@ -5,13 +5,16 @@ formats: hex, elf, map
 # bins_root: bin
 
 production:
-  - feature1
-  - feature2
+  - name/spaced/feature1 > feature1
+  - feature2:
+      source: name/spaced/feature2
+      destination: altered-namespace/feature2
+      targets: machine2
   - adc
 
 board_bring_up:
   targets: machine3
   bins:
-    - feature3
+    - feature3: variant+platform
     - feature4
-    
+    - feature5: "> altered/namespace/feature5"

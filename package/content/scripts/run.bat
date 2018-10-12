@@ -16,6 +16,7 @@ set toolRoot=%HalwayiToolsRoot%\tools\runner
 set filter_variant=
 set filter_platform=
 set xmlReport="--xml_report=%TestReportName%"
+set suppress_exit_code=false
 
 :parse_parameter_flags
 	IF [%1]==[] (
@@ -30,6 +31,10 @@ set xmlReport="--xml_report=%TestReportName%"
 		set selected_runner=console
 	) else IF [%1]==[cui] (
 		set selected_runner=console
+	) else IF [%1]==[hide-exit-code] (
+		set suppress_exit_code=true
+	) else IF [%1]==[hide_exit_code] (
+		set suppress_exit_code=true
 	) else IF [%1]==[var] (
 		set var=%~2
 		SHIFT
@@ -44,9 +49,10 @@ set xmlReport="--xml_report=%TestReportName%"
 		echo.
 		echo  Runs unit-tests for ghost and/or native images
 		echo.
-		echo     gui           : use the gui runner
-		echo     console       : use the console-based runner
-	    echo     no_xml_report : suppress the xml report {alias: no-xml-report}
+		echo     gui            : use the gui runner
+		echo     console        : use the console-based runner
+	    echo     no_xml_report  : suppress the xml report {alias: no-xml-report}
+	    echo     hide_exit_code : suppresses the exit code from runner
 		echo.
 		echo     ghost    : run ghost images
 		echo     native   : run native images
@@ -129,3 +135,8 @@ if ["%guiRunner%"]==["false"] (
 
 :r_exit
 popd
+
+if [%suppress_exit_code%]==[false] goto r_quit
+exit /b 0
+
+:r_quit

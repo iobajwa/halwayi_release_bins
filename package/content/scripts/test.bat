@@ -13,6 +13,8 @@ set test_job=build
 set variant=
 set platform_chosen=
 set no_xml_report=
+set run_tests_post_build=true
+set exit_code_flag=
 
 pushd "%CD%"
 	rem Parse command line switches to figure out what to do
@@ -39,6 +41,14 @@ pushd "%CD%"
 			set no_xml_report=no_xml_report
 		) else IF [%1]==[no_xml_report] (
 			set no_xml_report=no_xml_report
+		) else IF [%1]==[no-run] (
+			set run_tests_post_build=false
+		) else IF [%1]==[no_run] (
+			set run_tests_post_build=false
+		) else IF [%1]==[hide-exit-code] (
+			set exit_code_flag=suppress_exit_code
+		) else IF [%1]==[hide_exit_code] (
+			set exit_code_flag=suppress_exit_code
 		) else if [%1]==[?] (
 			echo.
 			echo  Builds and automatically runs unit-tests
@@ -53,7 +63,9 @@ pushd "%CD%"
 		    echo.
 		    echo     gui       : run tests on gui runner
 		    echo     console   : run tests on console-based runner
-		    echo     no_xml_report : suppress the xml report {alias: no-xml-report}
+		    echo     no_xml_report  : suppress the xml report {alias: no-xml-report}
+		    echo     no_run         : tests are only compiled and not run
+	    	echo     hide_exit_code : suppresses the exit code from runner
 		    echo.
 		    echo    NOTE: 
 			echo        1. ghost images are run by default when no preference is specified.
@@ -98,6 +110,7 @@ if %ERRORLEVEL% GTR 0 (
 popd
 
 if [%test_job%]==[clean] goto exit_script
-call run %glob% %native% %ghost% %user_interface% %platform_chosen% %no_xml_report%
+if [%run_tests_post_build%]==[false] goto exit_script
+call run %glob% %native% %ghost% %user_interface% %platform_chosen% %exit_code_flag% %no_xml_report%
 
 :exit_script

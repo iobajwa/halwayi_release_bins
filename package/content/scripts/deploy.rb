@@ -107,23 +107,22 @@ def delete_shell_script task, bundle_name, temp_script_root, batch_file_prefix=n
 	end
 	return nil
 end
-def parse_target target_root, target_name
-	target_batch_file = File.join target_root, target_name + ".bat"
-	raise "'#{target_name}' target not found" unless File.exist? target_batch_file
-	lines = File.readlines target_batch_file
-	variant, platform = nil, nil
-	lines.each { |line|
-		l = line.strip
-		if line.start_with?("set var=") or line.start_with?("set \"var=")
-			variant = line.gsub("set var=", '').gsub("set \"var=", '').gsub('"', '').strip
-			variant = nil if variant == ''
-		elsif line.start_with?("set platform=") or line.start_with?("set \"platform=")
-			platform = line.gsub("set platform=", '').gsub("set \"platform=", '').gsub('"', '').strip
-			platform = nil if platform == ''
+def parse_target_meta
+	meta = {}
+	targets_raw = `list targets`.split("\n")
+	targets_raw.each { |line|
+		if line.strip =~ /\s*\b(.*)\b\s*\((.*)\)\s*/
+			target_name = $~[1]
+			variant_platform_config = $~[2]
+			meta[target_name] = variant_platform_config
+			# if variant_platform_config
+			# 	variant, platform = variant_platform_config.split '+'
+			# 	platform = platform[0] if platform.class == Array
+			# end
 		end
 	}
-	return nil unless variant and platform
-	return "#{variant}+#{platform}"
+
+	return meta
 end
 def parse_source_destination raw
 	if raw =~ /\s*(.*?)\s*>\s*(.*)\s*/
@@ -178,13 +177,11 @@ bin_root         = ENV['BinRoot']
 temp_script_root = ENV['BuildMagicRoot']
 artifacts_root   = ENV['ArtifactsRoot']
 magic_root       = ENV['MagicRoot']
-target_root      = ENV['TargetsRoot']
 # sanity check
 error "ProjectRoot not defined."    unless project_root
 error "BinRoot not defined."        unless bin_root
 error "BuildMagicRoot not defined." unless temp_script_root
 error "ArtifactsRoot not defined."  unless artifacts_root
-error "target_root not defined."    unless target_root
 deploy_file = File.join magic_root, "deploy.yaml"
 unless deploy_path
 	puts "no deploy path provided, using default" if verbose
@@ -195,7 +192,6 @@ end
 # ensure the paths exist
 error "path doesn't exist: '#{deploy_path}'"                    unless Dir.exist? deploy_path
 error "temp script folder doesn't exist: '#{temp_script_root}'" unless Dir.exist? temp_script_root
-error "targets folder doesn't exist: '#{target_root}'"          unless Dir.exist? target_root
 error "deploy.yaml not found in MagicRoot ('#{magic_root}')."   unless File.exist? deploy_file
 # sanitize
 project_root     = project_root.gsub('\\', '/')
@@ -204,7 +200,6 @@ temp_script_root = temp_script_root.gsub('\\', '/')
 artifacts_root   = artifacts_root.gsub('\\', '/')
 magic_root       = magic_root.gsub('\\', '/')
 deploy_path      = deploy_path.gsub('\\', '/')
-target_root      = target_root.gsub('\\', '/')
 
 
 if verbose
@@ -234,10 +229,11 @@ global_formats    = sanitize_array_meta user_meta["formats"]
 global_targets    = sanitize_array_meta user_meta["targets"]
 global_targets    = [] unless global_targets
 global_vp_configs = [] unless global_vp_configs
-global_variants.each{ |v| global_platforms.each{ |pl| global_vp_configs.push "#{v}+#{pl}" } if global_platforms } if global_variants
 global_formats = [".hex"] if global_formats == nil or global_formats.length == 0
 deploy_bundles = {}
-parsed_targets_repo = {}
+parsed_targets_repo = parse_target_meta
+global_variants.each{ |v| global_platforms.each{ |pl| global_vp_configs.push "#{v}+#{pl}" } if global_platforms } if global_variants
+
 user_meta.each_pair { |bundle_name, bundle_meta|
 	next if known_meta.include? bundle_name
 
@@ -339,10 +335,6 @@ user_meta.each_pair { |bundle_name, bundle_meta|
 		bmeta[:targets].each { |t|
 			begin
 				target_vp_config = parsed_targets_repo[t]
-				unless target_vp_config
-					target_vp_config = parse_target target_root, t
-					parsed_targets_repo[t] = target_vp_config
-				end
 				if target_vp_config 
 					vp_configs.push target_vp_config unless vp_configs.include? target_vp_config
 					targets_parsed[t] = target_vp_config

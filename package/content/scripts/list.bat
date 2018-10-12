@@ -22,15 +22,21 @@ call load_environment
 			echo.
 			echo     project_name
 			echo     context        : active target 'variant+platform' configuration
+			echo     target_context
 			echo.
 			echo     variants
 			echo     variant_count
 			echo     first_variant
 			echo     release_cpu
 			echo     test_cpu
+			echo     target_count
 			echo.
 			echo     targets
 			echo     target_names
+			echo     target_count
+			echo.
+			echo     features
+			echo     feature_count
 			echo.
 			echo     platforms      : platforms shared by all variants if var is unspecified,
 			echo                      platforms specific to the specified var otherwise.

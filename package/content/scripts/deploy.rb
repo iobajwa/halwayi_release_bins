@@ -2,6 +2,8 @@
 require 'yaml'
 require 'fileutils'
 
+STDOUT.sync = true
+
 usage_text = "
 A simple utility to deploy bundles. 'bundles' are halwayi's way of looking at deployment packages.
   

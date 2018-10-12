@@ -3,6 +3,8 @@ require "socket"
 require "date"
 require 'fileutils'
 
+STDOUT.sync = true
+
 usage_text = "
 A simple utility to build features for one (or more) targets.
 

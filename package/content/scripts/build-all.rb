@@ -249,7 +249,6 @@ target_list.each { |tname|
 # create a mental model of everything- target trees, unique namespace lists, etc.
 targets = {}
 targets_features_list.each_pair { |tname, feature_list|
-	feature_list = [ feature_list[0], feature_list[1], feature_list[2] ]
 	tree              = Tree.populate tname, feature_list
 	unique_namespaces = Tree.get_all_unique_namespace_combinations feature_list
 	root_namespaces   = Tree.get_root_namespaces feature_list
@@ -270,6 +269,12 @@ targets.each_pair { |tname, tmeta|
 	puts "building all features for '#{tname}' target.."
 	tree         = tmeta[:tree]
 	feature_list = tmeta[:features]
+
+	target_total_build_count    = 0
+	target_total_passed_count   = 0
+	target_total_failed_count   = 0
+	target_total_timedout_count = 0
+	target_total_build_time     = 0
 
 	feature_list.each { |feature_name|
 
@@ -304,15 +309,28 @@ targets.each_pair { |tname, tmeta|
 		feature_node = tree.get_leaf feature_name
 		feature_node.meta = { :time => build_time, :result => build_result, :exit_code => exit_code, :output => output }
 		if build_result == :passed
-			total_passed_count += 1
+			target_total_passed_count += 1
 		elsif build_result == :failed
-			total_failed_count += 1
+			target_total_failed_count += 1
 		else
-			total_timedout_count += 1
+			target_total_timedout_count += 1
 		end
-		total_build_count += 1
-		total_time += build_time
+		target_total_build_count += 1
+		target_total_build_time  += build_time
 	}
+	
+	tmeta[:build] = { 
+					  :time           => target_total_build_time,
+					  :total_count    => target_total_build_count,
+					  :passed_count   => target_total_passed_count, 
+					  :failed_count   => target_total_failed_count,
+					  :timedout_count => target_total_timedout_count,
+					}
+	total_passed_count   += target_total_passed_count
+	total_failed_count   += target_total_failed_count
+	total_timedout_count += target_total_timedout_count
+	total_build_count    += target_total_build_count
+	total_time           += target_total_build_time
 }
 
 # render the report to compatible test report
@@ -362,34 +380,43 @@ def node_generate_report node, namespace, starting_tab, tab_space
 	return results.flatten
 end
 
-overall_project_status       = success_status_to_s total_passed_count, total_failed_count, total_timedout_count
-overall_project_build_result = build_result_status_to_s total_passed_count, total_failed_count, total_timedout_count
-machine_name                 = Socket.gethostname
-test_results_header = "<test-results time=\"#{spawn_time}\" date=\"#{spawn_date}\" invalid=\"0\" skipped=\"0\" ignored=\"0\" inconclusive=\"#{total_timedout_count}\" not-run=\"0\" failures=\"#{total_failed_count}\" errors=\"0\" total=\"#{total_build_count}\" name=\"#{project_name}\">"
-env_header          = "  <environment nunit-version=\"2.6.2.12296\" clr-version=\"2.0.50727.4927\" os-version=\"Microsoft Windows NT 6.2.9200.0\" platform=\"Win32NT\" cwd=\"#{Dir.pwd}\" machine-name=\"#{machine_name}\" user=\"#{ENV['USERNAME']}\" user-domain=\"#{machine_name}\"/>"
+project_status       = success_status_to_s total_passed_count, total_failed_count, total_timedout_count
+project_build_result = build_result_status_to_s total_passed_count, total_failed_count, total_timedout_count
+machine_name         = Socket.gethostname
+test_results_header  = "<test-results time=\"#{spawn_time}\" date=\"#{spawn_date}\" invalid=\"0\" skipped=\"0\" ignored=\"0\" inconclusive=\"#{total_timedout_count}\" not-run=\"0\" failures=\"#{total_failed_count}\" errors=\"0\" total=\"#{total_build_count}\" name=\"#{project_name}\">"
+env_header           = "  <environment nunit-version=\"2.6.2.12296\" clr-version=\"2.0.50727.4927\" os-version=\"Microsoft Windows NT 6.2.9200.0\" platform=\"Win32NT\" cwd=\"#{Dir.pwd}\" machine-name=\"#{machine_name}\" user=\"#{ENV['USERNAME']}\" user-domain=\"#{machine_name}\"/>"
 report_contents = [
 	'<?xml version="1.0" encoding="UTF-8"?>',
 	"<!--This file contains the results of running a build-all command.-->",
 	test_results_header, 
 	env_header,
 	"  <culture-info current-culture=\"en-US\" current-uiculture=\"en-US\"/>",
-	"  <test-suite time=\"#{total_time}\" name=\"#{project_name}\" asserts=\"0\" success=\"#{overall_project_status}\" result=\"#{overall_project_build_result}\" executed=\"True\" type=\"Assembly\">",
+	"  <test-suite time=\"#{total_time}\" name=\"#{project_name}\" asserts=\"0\" success=\"#{project_status}\" result=\"#{project_build_result}\" executed=\"True\" type=\"Assembly\">",
 	"    <results>",
 ]
 project_namespace = project_name
 targets.each { |tname, tmeta|
+
+	target_time     = tmeta[:build][:time]
+	target_total    = tmeta[:build][:total_count]
+	target_passed   = tmeta[:build][:passed_count]
+	target_failed   = tmeta[:build][:failed_count]
+	target_timedout = tmeta[:build][:timedout_count]
+	target_status       = success_status_to_s target_passed, target_failed, target_timedout
+	target_build_result = build_result_status_to_s target_passed, target_failed, target_timedout
+	report_contents.push "      <test-suite time=\"#{target_time}\" name=\"#{tname}\" asserts=\"0\" success=\"#{target_status}\" result=\"#{target_build_result}\" executed=\"True\" type=\"Namespace\">"
+	report_contents.push "        <results>"
 	tree            = tmeta[:tree]
 	root_namespaces = tmeta[:root_namespaces]
 	namespaces      = tmeta[:unique_namespaces]
 
 	root_namespaces.each { |n| 
 		node = tree.get_node n
-		report_contents.push node_generate_report node, project_namespace, "    ",  "  "
+		report_contents.push node_generate_report node, "#{project_namespace}.#{tname}", "        ",  "  "
 	}
 
-	namespaces.each { |t|
-
-	}
+	report_contents.push "        </results>"
+	report_contents.push "      </test-suite>"
 }
 report_contents.push [
 	"    </results>",	

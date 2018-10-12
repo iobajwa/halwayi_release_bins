@@ -1,6 +1,7 @@
 require "timeout"
 require "socket"
 require "date"
+require 'fileutils'
 
 usage_text = "
 A simple utility to build features for one (or more) targets.

@@ -38,7 +38,7 @@ Please refer to Halwayi's license agreement for more details
 
 
   <Target Name="SetupGhostBuildProperties">
-    <PropertyGroup Condition="'$(GhostToolchain)' == 'gcc'">
+    <PropertyGroup>
       <IncludePath>$(Paths)</IncludePath>
     </PropertyGroup>
     <PropertyGroup>

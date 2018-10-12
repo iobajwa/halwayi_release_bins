@@ -22,6 +22,7 @@ Please refer to Halwayi's license agreement for more details
 		<Platform>Win32</Platform>
 		<OutputName></OutputName>
 		<ReleaseBuild>true</ReleaseBuild>
+		<GhostTool></GhostTool>
 	</PropertyGroup>
 
 
@@ -33,8 +34,8 @@ Please refer to Halwayi's license agreement for more details
 													Include External Dependencies
 	************************************************************************************************************************
 	-->
-	<Import Project="$(TargetsToolPath)\ghostgcc.targets" Condition=" '$(BuildGhost)' == 'true' AND '$(GhostToolchain)' == 'gcc' "/>
-  	<Import Project="$(TargetsToolPath)\ghostvcc.targets" Condition=" '$(BuildGhost)' == 'true' AND '$(GhostToolchain)' != 'gcc' "/>
+	<Import Project="$(TargetsToolPath)\ghostgcc.targets" Condition=" '$(BuildGhost)' == 'true' AND '$(GhostTool)' != 'vcc' "/>
+  	<Import Project="$(TargetsToolPath)\ghostvcc.targets" Condition=" '$(BuildGhost)' == 'true' AND '$(GhostTool)' == 'vcc' "/>
 	<Import Project= "$(GhostLinkFile)" Condition="Exists($(GhostLinkFile))"/>
 
 	

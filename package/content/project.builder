@@ -29,6 +29,7 @@ Please refer to Halwayi's license agreement for more details
     <FeatureCFile></FeatureCFile>
     <FeatureName></FeatureName>
     <BuildIDE>false</BuildIDE>
+    <GhostToolchainName></GhostToolchainName>
   </PropertyGroup>
 
   <PropertyGroup Condition= "$([System.String]::IsNullOrEmpty('$(SelectedVariant)')) == 'false'">
@@ -279,7 +280,7 @@ Please refer to Halwayi's license agreement for more details
                            ToolScriptsFolders = $(_tv_ToolScripts); ToolChainPath = $(NativeToolChainPath);
                            ToolChainTimeoutPeriod = $(NativeToolChainTimeout); PlatformName = %(VariantsBatch.Platform);
                            NativeCompilerArgs = $(NativeCompilerArgs); GhostCompilerArgs = $(GhostCompilerArgs); GhostLinkerArgs = $(GhostLinkerArgs);
-                           BuildIDE = $(BuildIDE);
+                           BuildIDE = $(BuildIDE); GhostToolname=$(GhostToolchainName);
                         "
              />
   </Target>
@@ -294,7 +295,7 @@ Please refer to Halwayi's license agreement for more details
         KnownToolChains="@(ToolChains)"
         DefaultGhostTimeoutPeriod="$(GhostTimeoutPeriod)"
         DefaultSimulatorTimeoutPeriod="$(SimulatorTimeoutPeriod)"
-        GhostToolchain="$(GhostToolchain)"
+        GhostToolchain="$(GhostToolchainName)"
       >
       <Output ItemName= "VariantsBatchAll" TaskParameter= "VariantsClubbed" />
     </ClubVariantPlatformTask>

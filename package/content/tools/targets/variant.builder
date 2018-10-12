@@ -55,6 +55,7 @@ Please refer to Halwayi's license agreement for more details
 		<_NativeMain></_NativeMain>
 		<ToolChainPath></ToolChainPath>
 		<ToolChainTimeoutPeriod></ToolChainTimeoutPeriod>
+		<GhostToolname></GhostToolname>
 	</PropertyGroup>
 
 
@@ -651,7 +652,7 @@ Please refer to Halwayi's license agreement for more details
 													 NativeToolChainID = $(_NativeToolChain); _ProjectFile = $(ProjectFile); 
 													 _Defines = $(Defines); _ToolChainPath = $(ToolChainPath);
 													 _ToolChainTimeoutPeriod = $(ToolChainTimeoutPeriod);
-													 __VariantName = $(_VariantName); _DefaultPropertyFile = $(DefaultPropertyFile) "
+													 __VariantName = $(_VariantName); _DefaultPropertyFile = $(DefaultPropertyFile); GhostTool=$(GhostToolname) "
 						 Targets="TestBuildTestFile" />
 	</Target>
 

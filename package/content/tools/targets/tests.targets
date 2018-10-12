@@ -38,6 +38,7 @@ Please refer to Halwayi's license agreement for more details
     <__DefaultPropertyFile></__DefaultPropertyFile>
     <Platform></Platform>
     <ToolChainTimeoutPeriod></ToolChainTimeoutPeriod>
+    <GhostToolID>gcc</GhostToolID>
   </PropertyGroup>
 
 
@@ -59,8 +60,8 @@ Please refer to Halwayi's license agreement for more details
   
   <Import Project="$(__DefaultPropertyFile)" />
   <Import Project="$(ProjectPropertySheet)" />
-  <Import Project="$(TargetsToolPath)\ghostgcc.targets" Condition=" '$(BuildGhost)' == 'true' AND '$(GhostToolchain)' == 'gcc' "/>
-  <Import Project="$(TargetsToolPath)\ghostvcc.targets" Condition=" '$(BuildGhost)' == 'true' AND '$(GhostToolchain)' != 'gcc' "/>
+  <Import Project="$(TargetsToolPath)\ghostgcc.targets" Condition=" '$(BuildGhost)' == 'true' AND '$(GhostToolID)' != 'vcc' "/>
+  <Import Project="$(TargetsToolPath)\ghostvcc.targets" Condition=" '$(BuildGhost)' == 'true' AND '$(GhostToolID)' == 'vcc' "/>
   <Import Project="$(GhostLinkFile)" Condition="Exists($(GhostLinkFile))"/>
   <Import Project="$(NativeLinkFile)" Condition="Exists($(NativeLinkFile))"/>
   <Import Project="$(TargetsToolPath)\native.targets" Condition=" '$(BuildNative)' == 'true' "/>

@@ -30,6 +30,7 @@ Please refer to Halwayi's license agreement for more details
 		<ToolChainTimeoutPeriod></ToolChainTimeoutPeriod>
 		<IdeFolderRoot></IdeFolderRoot>
 		<BuildIDE>false</BuildIDE>
+		<GhostToolname></GhostToolname>
 
 		<!-- Variant information -->
 		<_VariantName></_VariantName>
@@ -150,6 +151,8 @@ Please refer to Halwayi's license agreement for more details
   <Target Name="_CleanGhost" Condition= " '$(BuildGhostAsWell)' == 'true' ">
     <RemoveDir Directories= "$(VariantArtificatFolderRoot)\ghost" />
     <RemoveDir Directories= "$(VariantBinFolderRoot)\ghost" />
+    <RemoveDir Directories= "$(VariantBinFolderRoot)" Condition= "'Exists($(VariantBinFolderRoot)\$(_NativeToolChain))' == 'false'"/>
+    <RemoveDir Directories= "$(VariantArtificatFolderRoot)" Condition= "'Exists($(VariantArtificatFolderRoot)\$(_NativeToolChain))' == 'false'"/>
     <Message Text= "Deleted '$(VariantArtificatFolderRoot)\ghost' " Importance= "high" />
     <Message Text= "Deleted '$(VariantBinFolderRoot)\ghost' " Importance= "high" />
   </Target>
@@ -157,6 +160,8 @@ Please refer to Halwayi's license agreement for more details
   <Target Name="_CleanNative" Condition= " '$(BuildNativeAsWell)' == 'true' " >
     <RemoveDir Directories= "$(VariantArtificatFolderRoot)\$(_NativeToolChain)" />
     <RemoveDir Directories= "$(VariantBinFolderRoot)\$(_NativeToolChain)" />
+    <RemoveDir Directories= "$(VariantBinFolderRoot)" Condition= "'Exists($(VariantBinFolderRoot)\ghost)' == 'false'"/>
+    <RemoveDir Directories= "$(VariantArtificatFolderRoot)" Condition= "'Exists($(VariantArtificatFolderRoot)\ghost)' == 'false'"/>
     <Message Text= "Deleted '$(VariantArtificatFolderRoot)\$(_NativeToolChain)' " Importance= "high" />
     <Message Text= "Deleted '$(VariantBinFolderRoot)\$(_NativeToolChain)' " Importance= "high" />
   </Target>
@@ -231,7 +236,7 @@ Please refer to Halwayi's license agreement for more details
 													 Directives = $(ReleaseDefines); Paths = $(_AllGhostIncludedPaths);
 													 TargetsToolPath = $(TargetsToolPath); BuilderTasksPath = $(BuilderTasksPath);
 													 GhostLinkFile = $(GhostLinkFile); _SelectedConfiguration = $(SelectedConfiguration);
-													 OutputName=$(OutputName);
+													 OutputName=$(OutputName); GhostTool=$(GhostToolname);
 													"
 						 Targets= "GhostReleaseAll" />
 	</Target>
@@ -484,7 +489,7 @@ Please refer to Halwayi's license agreement for more details
 	<Target Name= "_SetupGhostRelatedBuildProperties">
 		<PropertyGroup>
 			<GhostBinFolder>$(VariantBinFolderRoot)\</GhostBinFolder>
-			<GhostArtifactFolder>$(VariantArtificatFolderRoot)\Ghost\</GhostArtifactFolder>
+			<GhostArtifactFolder>$(VariantArtificatFolderRoot)\ghost\</GhostArtifactFolder>
 			<IncludePath>$(_AllGhostIncludedPaths);$(IncludePath)</IncludePath>
 			<OutputName>$(ProjectName)</OutputName>
 		</PropertyGroup>
@@ -532,8 +537,8 @@ Please refer to Halwayi's license agreement for more details
 
 	<!-- Ghost related targets -->
 	<Target Name= "_CreateGhostArtifactAndBinFolders">
-		<MakeDir Directories= "$(GhostArtifactFolder)" />
-		<MakeDir Directories= "$(GhostBinFolder)" />
+		<MakeDir Directories= "$(GhostArtifactFolder)" Condition="'$(BuildGhostAsWell)' == 'true'" />
+		<MakeDir Directories= "$(GhostBinFolder)" Condition="'$(BuildGhostAsWell)' == 'true'" />
 	</Target>
 
 	<Target Name= "_CreateGhostLinkFile">
@@ -549,8 +554,8 @@ Please refer to Halwayi's license agreement for more details
 
 	<!-- Native related targets -->
 	<Target Name= "_CreateNativeArtifactAndBinFolders">
-		<MakeDir Directories= "$(NativeIntDir)" />
-		<MakeDir Directories= "$(NativeOutDir)" />
+		<MakeDir Directories= "$(NativeIntDir)"/>
+		<MakeDir Directories= "$(NativeOutDir)"/>
 	</Target>
 
 	<Target Name= "_CreateNativeLinkFile">

@@ -36,6 +36,7 @@ Please refer to Halwayi's license agreement for more details
     <CExceptionIncludedGhost>false</CExceptionIncludedGhost>
     <_ToolChainPath></_ToolChainPath>
     <_ToolChainTimeoutPeriod></_ToolChainTimeoutPeriod>
+    <GhostTool></GhostTool>
   </PropertyGroup>
 
   <ItemGroup>
@@ -122,7 +123,8 @@ Please refer to Halwayi's license agreement for more details
                             NativeProcessor = $(NativeProcessor); ProjectPropertySheet = $(_ProjectFile); 
                             NativeToolChain = $(NativeToolChainID); ToolChainPath = $(_ToolChainPath);
                             ToolChainTimeoutPeriod = $(_ToolChainTimeoutPeriod);
-                            __DefaultPropertyFile = $(_DefaultPropertyFile); BuildGhost = $(BuildGhostAlso)"
+                            __DefaultPropertyFile = $(_DefaultPropertyFile); BuildGhost = $(BuildGhostAlso);
+                            GhostToolID=$(GhostTool);"
              />
   </Target>
 

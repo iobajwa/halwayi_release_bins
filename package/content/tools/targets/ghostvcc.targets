@@ -94,13 +94,13 @@ Please refer to Halwayi's license agreement for more details
 
 
   <Target Name = "GhostInfo">
-    <Message Text="Include Paths : $(IncludePath)" Importance="normal"/>
+    <!-- <Message Text="Include Paths : $(IncludePath)" Importance="normal"/>
     <Message Text="Exec Name     : $(TargetName)" Importance="normal"/>
     <Message Text="Output Dir    : $(OutDir)" Importance="normal"/>
     <Message Text="Artifact Dir  : $(IntDir)" Importance="normal"/>
     <Message Text="Directives    : %(ClCompile.AdditionalOptions)" Importance="normal" />
     <Message Text="Source Files  : " Importance="normal"/>
-    <Message Text="                %(CLCompile.Identity)" Importance="normal"/>
+    <Message Text="                %(CLCompile.Identity)" Importance="normal"/> -->
   </Target>
 
 

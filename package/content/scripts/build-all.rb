@@ -278,9 +278,9 @@ targets.each_pair { |tname, tmeta|
 
 	feature_list.each { |feature_name|
 
-		feature_name_transformed = feature_name.gsub('/', '.') + ".build-output.txt"
+		feature_name_transformed = tname + '.' + feature_name.gsub('/', '.') + ".build-output.txt"
 		output_file = File.join output_path, feature_name_transformed
-		puts "building '#{feature_name}' feature"
+		puts "building '#{tname}.#{feature_name}' feature"
 		puts "output: #{output_file}"
 
 		exit_code = build_result = nil
@@ -301,6 +301,7 @@ targets.each_pair { |tname, tmeta|
 			exit_code    = -1
 			build_result = :timedout
 		end
+		puts ""
 
 		# build completed, capture report
 		output     = File.exist?(output_file) ? File.readlines(output_file) : []
@@ -308,15 +309,12 @@ targets.each_pair { |tname, tmeta|
 
 		feature_node = tree.get_leaf feature_name
 		feature_node.meta = { :time => build_time, :result => build_result, :exit_code => exit_code, :output => output }
-		if build_result == :passed
-			target_total_passed_count += 1
-		elsif build_result == :failed
-			target_total_failed_count += 1
-		else
-			target_total_timedout_count += 1
-		end
-		target_total_build_count += 1
-		target_total_build_time  += build_time
+		
+		target_total_passed_count   += 1 if build_result == :passed
+		target_total_failed_count   += 1 if build_result == :failed
+		target_total_timedout_count += 1 if build_result == :timedout
+		target_total_build_count    += 1
+		target_total_build_time     += build_time
 	}
 	
 	tmeta[:build] = { 
@@ -339,7 +337,7 @@ puts "summary"
 puts "   total: #{total_build_count}  succeeded: #{total_passed_count}  failed: #{total_failed_count}  timedout: #{total_timedout_count}"
 puts "   took #{total_time} seconds"
 puts ""
-puts "creating report.."
+puts "generating report.."
 
 def compute_build_status_counts aggregated_meta
 	passed_count, failed_count, timedout_count, total_time = 0, 0, 0, 0

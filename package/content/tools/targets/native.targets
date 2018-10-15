@@ -39,11 +39,11 @@ Please refer to Halwayi's license agreement for more details
 
 
   <Target Name="NativeBuild" >
-    <Error Text="Override the NativeBuild target for the '$(NativeToolChain)' tool chain." />
+    <Error Text="Override the NativeBuild target for the '$(_NativeToolChain)' tool chain." />
   </Target>
 
   <Target Name="NativeIdeBuild" Condition="'$(BuildIDE)' == 'true'">
-    <Error Text="Building IDE project for '$(NativeToolChain)' tool chain are not supported as of now." />
+    <Error Text="Building IDE project for '$(_NativeToolChain)' tool chain are not supported as of now." />
   </Target>
 
 

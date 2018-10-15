@@ -393,6 +393,7 @@ def node_generate_report node, namespace, starting_tab, tab_space
 							 starting_tab + tab_space + tab_space + tab_space + tab_space + "<![CDATA[unknown]]>",
 							 starting_tab + tab_space + tab_space + tab_space + "</stack-trace>",
 							 starting_tab + tab_space + tab_space + "</failure>",
+							 starting_tab + tab_space + "</test-case>",
 						   ]
 	   		results.push leaf_results
 		end

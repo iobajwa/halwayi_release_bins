@@ -14,6 +14,9 @@ Builds all targets if none are specified.
 
   options: 
     
+    --features      : builds only the specified features
+                      aliases: -f
+
     --timeout       : for each build (in seconds)
                       default: 40
                       aliases: -t
@@ -154,6 +157,7 @@ end
 # parse, sanity check and sanitize the command line args
 requested_actions = {}
 targets_filtered  = []
+features_filtered = []
 output_path       = nil
 report_file       = nil
 build_timeout     = 40
@@ -179,6 +183,10 @@ ARGV.each_with_index { |e, i|
 	when "r", "report_file"
 		report_file = ARGV[i + 1]
 		skip = true
+	when "features_filtered", "f"
+		glob = ARGV[i + 1]
+		features_filtered.push glob.split(';').map(&:strip)
+		skip = true
 	when "?", "h", "help"
 		puts usage_text
 		exit
@@ -186,6 +194,7 @@ ARGV.each_with_index { |e, i|
 		targets_filtered.push e
 	end
 }
+features_filtered.flatten!
 
 ## discover the environment ##
 project_root       = ENV['ProjectRoot']
@@ -239,10 +248,12 @@ target_list.each { |tname|
 		next if line =~ /convention/i
 		l = line.strip
 		next if l == ""
-		name = File.basename(l)
+		name = File.basename l
 		next if name.start_with? '_' or name.end_with? '_'
-		features_to_build.push "#{l}"
+		next if features_filtered.length > 0 && !features_filtered.include?(l)
+		features_to_build.push l
 	}
+	error "#{tname}: no feature to build" if features_to_build.length == 0
 	targets_features_list[tname] = features_to_build
 }
 
@@ -331,12 +342,14 @@ targets.each_pair { |tname, tmeta|
 	total_time           += target_total_build_time
 }
 
-# render the report to compatible test report
+# print summary
 puts ""
 puts "summary"
 puts "   total: #{total_build_count}  succeeded: #{total_passed_count}  failed: #{total_failed_count}  timedout: #{total_timedout_count}"
 puts "   took #{total_time} seconds"
 puts ""
+
+# render the report to compatible test report
 puts "generating report.."
 
 def compute_build_status_counts aggregated_meta
@@ -362,11 +375,27 @@ def node_generate_report node, namespace, starting_tab, tab_space
 	meta = node.get_aggregated_meta
 	name = node.name
 	node_passed_count, node_failed_count, node_timedout_count, node_time = compute_build_status_counts meta
-	node_status       = success_status_to_s node_passed_count, node_failed_count, node_timedout_count
+	node_status       = success_status_to_s      node_passed_count, node_failed_count, node_timedout_count
 	node_build_result = build_result_status_to_s node_passed_count, node_failed_count, node_timedout_count
 	node_namespace    = namespace + "." + node.name
 	if node.is_leaf?
-		results.push( starting_tab + tab_space + "<test-case time=\"#{node_time}\" name=\"#{node_namespace}\" asserts=\"1\" success=\"#{node_status}\" result=\"#{node_build_result}\" executed=\"True\" />" )
+		if node_build_result == "Success"
+			results.push( starting_tab + tab_space + "<test-case time=\"#{node_time}\" name=\"#{node_namespace}\" asserts=\"1\" success=\"#{node_status}\" result=\"#{node_build_result}\" executed=\"True\" />" )
+		else
+			failure_message = node_timedout_count > 0 ? "build timedout" : "build failed"
+			leaf_results = [
+							 starting_tab + tab_space + "<test-case time=\"#{node_time}\" name=\"#{node_namespace}\" asserts=\"1\" success=\"#{node_status}\" result=\"#{node_build_result}\" executed=\"True\">",
+							 starting_tab + tab_space + tab_space + "<failure>",
+							 starting_tab + tab_space + tab_space + tab_space + "<message>",
+							 starting_tab + tab_space + tab_space + tab_space + tab_space + "<![CDATA[#{failure_message}]]>",
+							 starting_tab + tab_space + tab_space + tab_space + "</message>",
+							 starting_tab + tab_space + tab_space + tab_space + "<stack-trace>",
+							 starting_tab + tab_space + tab_space + tab_space + tab_space + "<![CDATA[unknown]]>",
+							 starting_tab + tab_space + tab_space + tab_space + "</stack-trace>",
+							 starting_tab + tab_space + tab_space + "</failure>",
+						   ]
+	   		results.push leaf_results
+		end
 	else
 		results.push( starting_tab + tab_space + "<test-suite time=\"#{node_time}\" name=\"#{name}\" asserts=\"0\" success=\"#{node_status}\" result=\"#{node_build_result}\" executed=\"True\" type=\"Namespace\">" )
 		results.push( starting_tab + tab_space + tab_space + "<results>")
@@ -378,7 +407,7 @@ def node_generate_report node, namespace, starting_tab, tab_space
 	return results.flatten
 end
 
-project_status       = success_status_to_s total_passed_count, total_failed_count, total_timedout_count
+project_status       = success_status_to_s      total_passed_count, total_failed_count, total_timedout_count
 project_build_result = build_result_status_to_s total_passed_count, total_failed_count, total_timedout_count
 machine_name         = Socket.gethostname
 test_results_header  = "<test-results time=\"#{spawn_time}\" date=\"#{spawn_date}\" invalid=\"0\" skipped=\"0\" ignored=\"0\" inconclusive=\"#{total_timedout_count}\" not-run=\"0\" failures=\"#{total_failed_count}\" errors=\"0\" total=\"#{total_build_count}\" name=\"#{project_name}\">"
@@ -421,13 +450,10 @@ report_contents.push [
 	"  </test-suite>",
 	"</test-results>"]
 
+
 create_file report_file, report_contents.flatten
+
 puts "done."
-# now build each feature for each target and capture the data
-# 	build-time
-#   build-result: passed, failed, timedout
 
-# puts targets_features
-
-
-# finally render all the information to xml
+exit_code = total_build_count - total_passed_count
+exit exit_code

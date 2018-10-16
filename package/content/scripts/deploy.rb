@@ -30,8 +30,11 @@ A simple utility to deploy bundles. 'bundles' are halwayi's way of looking at de
                       that will be deployed for the specified (or all) bundle(s)
                       aliases: -d, --list_deep
 
-    --verbose       : prints a lot of extra information while doing the job
+    --version       : overrides all deployed bundle version to the value specified
                       aliases: -v
+
+    --verbose       : prints a lot of extra information while doing the job
+                      aliases: -e
 
     --help          : -_-
                       aliases: -h, ?, -?, --?
@@ -50,6 +53,7 @@ def gen_batch_file_prefix(task) return task.gsub(' ', '-'); end
 def parse_array_from_string(str) return str.split(' ').map(&:chomp.with(',')); end
 def parse_variant_platform(str) return str.split('+').map(&:strip); end
 def create_file(name, contents) f = File.new(name, "w"); f.puts(contents);f.close(); end
+def sanitize_sting_meta(meta, default_value=nil) return meta == nil ? default_value : meta; end
 def sanitize_array_meta meta
 	return parse_array_from_string meta if meta.class == String
 	return meta
@@ -145,6 +149,7 @@ bundles_filtered  = []
 deploy_path       = nil
 verbose           = false
 requested_actions = { }
+forced_version    = nil
 skip = false
 ARGV.each_with_index { |e, i|
 	if skip
@@ -152,7 +157,10 @@ ARGV.each_with_index { |e, i|
 		next
 	end
 	case e.gsub(/^[-]*/, '').gsub('-', '_')
-	when "v", "verbose"
+	when "v", "version"
+		forced_version = ARGV[i + 1]
+		skip = true
+	when "e", "verbose"
 		verbose = true
 	when "b", "build_scripts"
 		requested_actions[:gen_scripts] = true
@@ -223,7 +231,9 @@ rescue Exception => e
 	error_log "error reading yaml file:"
 	error e.message
 end
-user_meta  = { "default" => user_meta } if user_meta.class != Hash
+user_meta = { "default" => user_meta } if user_meta.class != Hash
+global_version    = sanitize_sting_meta user_meta["version"], "<unknown>"
+global_version    = forced_version if forced_version
 global_variants   = sanitize_array_meta user_meta["variants"]
 global_platforms  = sanitize_array_meta user_meta["platforms"]
 global_vp_configs = sanitize_array_meta user_meta["vp_configs"]
@@ -240,13 +250,15 @@ user_meta.each_pair { |bundle_name, bundle_meta|
 	next if known_meta.include? bundle_name
 
 	# parse the deploy bundle
+	local_version = nil
 	bins = {}
 	if bundle_meta.class == Array
 		bundle_meta.each { |b| 
 			source, destination = parse_source_destination b
-			bins[source] = { :vp_configs => global_vp_configs, :targets => global_targets, :formats => global_formats, :destination => destination }
+			bins[source] = { :vp_configs => global_vp_configs, :targets => global_targets, :formats => global_formats, :destination => destination, :version => global_version.to_s }
 		}
 	elsif bundle_meta.class == Hash
+		local_version    = sanitize_sting_meta bundle_meta["version"]
 		local_variants   = sanitize_array_meta bundle_meta["variants"]
 		local_platforms  = sanitize_array_meta bundle_meta["platforms"]
 		local_vp_configs = sanitize_array_meta bundle_meta["vp_configs"]
@@ -280,6 +292,7 @@ user_meta.each_pair { |bundle_name, bundle_meta|
 						destination           = source
 					end
 				elsif v.class == Hash
+					i_version    = sanitize_sting_meta v["version"]
 					i_targets    = sanitize_array_meta v["targets"]
 					i_vp_configs = sanitize_array_meta v["vp_configs"]
 					source_t     = v["source"]
@@ -303,8 +316,9 @@ user_meta.each_pair { |bundle_name, bundle_meta|
 					end
 					e = v["formats"]
 					iformats = sanitize_array_meta e
-					applicable_formats = iformats if iformats and iformats.length > 0
+					applicable_formats = iformats  if iformats and iformats.length > 0
 					applicable_targets = i_targets if i_targets
+					applicable_version = i_version if i_version
 				else
 					error "'#{bundle_name}.#{source}' invalid meta '#{v}'"
 				end
@@ -325,10 +339,14 @@ user_meta.each_pair { |bundle_name, bundle_meta|
 			applicable_formats = global_formats if applicable_formats == nil || applicable_formats.length == 0
 
 			# we now have a bin meta
-			bins[source] = { :vp_configs => applicable_vp_configs, :targets => applicable_targets, :formats => applicable_formats, :destination => destination }
+			bins[source] = { :vp_configs => applicable_vp_configs, :targets => applicable_targets, :formats => applicable_formats, :destination => destination, :version => applicable_version }
 		}
-
 	end
+
+	# figure out the applicable_version
+	applicable_version = local_version
+	applicable_version = global_version if applicable_version == nil || forced_version
+	applicable_version = applicable_version.to_s
 
 	# parse the target definitions
 	bins.each_pair { |bname, bmeta|
@@ -349,7 +367,7 @@ user_meta.each_pair { |bundle_name, bundle_meta|
 		bmeta[:vp_configs] = vp_configs.flatten
 	}
 
-	deploy_bundles[bundle_name] = { :bins => bins }
+	deploy_bundles[bundle_name] = { :bins => bins, :version => applicable_version }
 }
 
 # filter bundles and ensure user provided meaningful filter
@@ -640,7 +658,7 @@ deploy_bundles.each_pair { |bundle_name, bundle_meta|
 		final_targets_image_map[t] = m
 	}
 
-	deployed_bundle_meta = { "name" => bundle_name, "targets" => final_targets_image_map }
+	deployed_bundle_meta = { "name" => bundle_name, "version" => bundle_meta[:version], "targets" => final_targets_image_map }
 
 	file_name = File.join bundle_meta[:deploy_path], "bundle.yaml"
 	create_file file_name, deployed_bundle_meta.to_yaml

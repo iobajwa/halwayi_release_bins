@@ -224,7 +224,7 @@ end
 
 
 ## parse, sanity check and sanitize deploy.yaml ##
-known_meta = ["variants", "platforms", "vp_configs", "formats", "targets"]
+known_meta = ["variants", "platforms", "vp_configs", "formats", "targets", "version"]
 begin
 	user_meta = YAML.load_file deploy_file
 rescue Exception => e

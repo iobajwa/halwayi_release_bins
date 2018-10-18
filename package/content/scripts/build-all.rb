@@ -183,9 +183,9 @@ ARGV.each_with_index { |e, i|
 	when "r", "report_file"
 		report_file = ARGV[i + 1]
 		skip = true
-	when "features_filtered", "f"
+	when "features", "f"
 		glob = ARGV[i + 1]
-		features_filtered.push glob.split(';').map(&:strip)
+		glob.split(';').map(&:strip).each { |glob| features_filtered.push glob.gsub('\\', '/') }
 		skip = true
 	when "?", "h", "help"
 		puts usage_text
@@ -199,6 +199,7 @@ features_filtered.flatten!
 ## discover the environment ##
 project_root       = ENV['ProjectRoot']
 artifacts_root     = ENV['ArtifactsRoot']
+report_file        = File.join artifacts_root, "build-all-results.xml" unless report_file
 # sanity check
 error "ProjectRoot not defined."                                  unless project_root
 error "ArtifactsRoot not defined."                                unless artifacts_root
@@ -211,12 +212,12 @@ unless output_path
 end
 # ensure the paths exist
 error "path doesn't exist: '#{output_path}'" unless Dir.exist? output_path
+File.delete report_file if File.exist? report_file
 # sanitize
 project_root   = project_root.gsub('\\', '/')
 artifacts_root = artifacts_root.gsub('\\', '/')
 output_path    = output_path.gsub('\\', '/')
 # print the environment
-report_file = File.join artifacts_root, "build-all-results.xml" unless report_file
 puts "project root       : #{project_root}"
 puts "artifacts root     : #{artifacts_root}"
 puts "output path        : #{output_path}"
@@ -267,7 +268,7 @@ targets_features_list.each_pair { |tname, feature_list|
 }
 
 puts "filtered target list is '#{targets_features_list.keys}'"
-
+puts ""
 
 # build all targets and gather reports
 total_build_count    = 0
@@ -277,10 +278,10 @@ total_timedout_count = 0
 total_time           = 0
 targets.each_pair { |tname, tmeta|
 
-	puts "building all features for '#{tname}' target.."
 	tree         = tmeta[:tree]
 	feature_list = tmeta[:features]
 
+	puts "building #{feature_list.length} feature#{feature_list.length > 0 ? 's' : ''} for '#{tname}' target.."
 	target_total_build_count    = 0
 	target_total_passed_count   = 0
 	target_total_failed_count   = 0
@@ -378,12 +379,13 @@ def node_generate_report node, namespace, starting_tab, tab_space
 	node_status       = success_status_to_s      node_passed_count, node_failed_count, node_timedout_count
 	node_build_result = build_result_status_to_s node_passed_count, node_failed_count, node_timedout_count
 	node_namespace    = namespace + "." + node.name
-	node_build_output = meta[:output]
 	if node.is_leaf?
 		if node_build_result == "Success"
 			results.push( starting_tab + tab_space + "<test-case time=\"#{node_time}\" name=\"#{node_namespace}\" asserts=\"1\" success=\"#{node_status}\" result=\"#{node_build_result}\" executed=\"True\" />" )
 		else
-			failure_message = node_timedout_count > 0 ? "build timedout" : "build failed"
+			failure_message   = node_timedout_count > 0 ? "build timedout" : "build failed"
+			node_build_output = ""
+			node.meta[:output].each { |l| node_build_output += l + "\n" }
 			leaf_results = [
 							 starting_tab + tab_space + "<test-case time=\"#{node_time}\" name=\"#{node_namespace}\" asserts=\"1\" success=\"#{node_status}\" result=\"#{node_build_result}\" executed=\"True\">",
 							 starting_tab + tab_space + tab_space + "<failure>",

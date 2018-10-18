@@ -281,7 +281,7 @@ targets.each_pair { |tname, tmeta|
 	tree         = tmeta[:tree]
 	feature_list = tmeta[:features]
 
-	puts "building #{feature_list.length} feature#{feature_list.length > 0 ? 's' : ''} for '#{tname}' target.."
+	puts "building #{feature_list.length} feature#{feature_list.length > 1 ? 's' : ''} for '#{tname}' target.."
 	target_total_build_count    = 0
 	target_total_passed_count   = 0
 	target_total_failed_count   = 0
@@ -385,7 +385,7 @@ def node_generate_report node, namespace, starting_tab, tab_space
 		else
 			failure_message   = node_timedout_count > 0 ? "build timedout" : "build failed"
 			node_build_output = ""
-			node.meta[:output].each { |l| node_build_output += l + "\n" }
+			node.meta[:output].each { |l| node_build_output += l }
 			leaf_results = [
 							 starting_tab + tab_space + "<test-case time=\"#{node_time}\" name=\"#{node_namespace}\" asserts=\"1\" success=\"#{node_status}\" result=\"#{node_build_result}\" executed=\"True\">",
 							 starting_tab + tab_space + tab_space + "<failure>",

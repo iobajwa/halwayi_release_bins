@@ -384,7 +384,7 @@ def node_generate_report node, namespace, starting_tab, tab_space
 			results.push( starting_tab + tab_space + "<test-case time=\"#{node_time}\" name=\"#{node_namespace}\" asserts=\"1\" success=\"#{node_status}\" result=\"#{node_build_result}\" executed=\"True\" />" )
 		else
 			failure_message   = node_timedout_count > 0 ? "build timedout" : "build failed"
-			node_build_output = ""
+			node_build_output = "\n\r"
 			node.meta[:output].each { |l| node_build_output += l }
 			leaf_results = [
 							 starting_tab + tab_space + "<test-case time=\"#{node_time}\" name=\"#{node_namespace}\" asserts=\"1\" success=\"#{node_status}\" result=\"#{node_build_result}\" executed=\"True\">",
@@ -445,13 +445,15 @@ targets.each { |tname, tmeta|
 
 	root_namespaces.each { |n| 
 		node = tree.get_node n
-		report_contents.push node_generate_report node, "#{project_namespace}.#{tname}", "            ",  "  "
+		report_contents.push node_generate_report node, "#{project_namespace}.features.#{tname}", "            ",  "  "
 	}
 
-	report_contents.push "        </results>"
-	report_contents.push "      </test-suite>"
+	report_contents.push "          </results>"
+	report_contents.push "        </test-suite>"
 }
 report_contents.push [
+	"        </results>",
+	"      </test-suite>",
 	"    </results>",	
 	"  </test-suite>",
 	"</test-results>"]

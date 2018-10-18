@@ -378,6 +378,7 @@ def node_generate_report node, namespace, starting_tab, tab_space
 	node_status       = success_status_to_s      node_passed_count, node_failed_count, node_timedout_count
 	node_build_result = build_result_status_to_s node_passed_count, node_failed_count, node_timedout_count
 	node_namespace    = namespace + "." + node.name
+	node_build_output = meta[:output]
 	if node.is_leaf?
 		if node_build_result == "Success"
 			results.push( starting_tab + tab_space + "<test-case time=\"#{node_time}\" name=\"#{node_namespace}\" asserts=\"1\" success=\"#{node_status}\" result=\"#{node_build_result}\" executed=\"True\" />" )
@@ -390,7 +391,7 @@ def node_generate_report node, namespace, starting_tab, tab_space
 							 starting_tab + tab_space + tab_space + tab_space + tab_space + "<![CDATA[#{failure_message}]]>",
 							 starting_tab + tab_space + tab_space + tab_space + "</message>",
 							 starting_tab + tab_space + tab_space + tab_space + "<stack-trace>",
-							 starting_tab + tab_space + tab_space + tab_space + tab_space + "<![CDATA[unknown]]>",
+							 starting_tab + tab_space + tab_space + tab_space + tab_space + "<![CDATA[#{node_build_output}]]>",
 							 starting_tab + tab_space + tab_space + tab_space + "</stack-trace>",
 							 starting_tab + tab_space + tab_space + "</failure>",
 							 starting_tab + tab_space + "</test-case>",
@@ -421,6 +422,8 @@ report_contents = [
 	"  <culture-info current-culture=\"en-US\" current-uiculture=\"en-US\"/>",
 	"  <test-suite time=\"#{total_time}\" name=\"#{project_name}\" asserts=\"0\" success=\"#{project_status}\" result=\"#{project_build_result}\" executed=\"True\" type=\"Assembly\">",
 	"    <results>",
+	"      <test-suite time=\"#{total_time}\" name=\"features\" asserts=\"0\" success=\"#{project_status}\" result=\"#{project_build_result}\" executed=\"True\" type=\"Assembly\">",
+	"      <results>",
 ]
 project_namespace = project_name
 targets.each { |tname, tmeta|
@@ -430,17 +433,17 @@ targets.each { |tname, tmeta|
 	target_passed   = tmeta[:build][:passed_count]
 	target_failed   = tmeta[:build][:failed_count]
 	target_timedout = tmeta[:build][:timedout_count]
-	target_status       = success_status_to_s target_passed, target_failed, target_timedout
+	target_status       = success_status_to_s      target_passed, target_failed, target_timedout
 	target_build_result = build_result_status_to_s target_passed, target_failed, target_timedout
-	report_contents.push "      <test-suite time=\"#{target_time}\" name=\"#{tname}\" asserts=\"0\" success=\"#{target_status}\" result=\"#{target_build_result}\" executed=\"True\" type=\"Namespace\">"
-	report_contents.push "        <results>"
+	report_contents.push "        <test-suite time=\"#{target_time}\" name=\"#{tname}\" asserts=\"0\" success=\"#{target_status}\" result=\"#{target_build_result}\" executed=\"True\" type=\"Namespace\">"
+	report_contents.push "          <results>"
 	tree            = tmeta[:tree]
 	root_namespaces = tmeta[:root_namespaces]
 	namespaces      = tmeta[:unique_namespaces]
 
 	root_namespaces.each { |n| 
 		node = tree.get_node n
-		report_contents.push node_generate_report node, "#{project_namespace}.#{tname}", "        ",  "  "
+		report_contents.push node_generate_report node, "#{project_namespace}.#{tname}", "            ",  "  "
 	}
 
 	report_contents.push "        </results>"

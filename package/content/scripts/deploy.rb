@@ -13,7 +13,7 @@ A simple utility to deploy bundles. 'bundles' are halwayi's way of looking at de
     
   	--deploy-template : 
 
-    --path          : the path to deploy the images listed in the deploy.yaml
+    --path          : the path to deploy the images listed in the bundles.yaml
                       default: $build_root/deploy
                       aliases: -p
 
@@ -192,17 +192,17 @@ error "ProjectRoot not defined."    unless project_root
 error "BinRoot not defined."        unless bin_root
 error "BuildMagicRoot not defined." unless temp_script_root
 error "ArtifactsRoot not defined."  unless artifacts_root
-deploy_file = File.join magic_root, "deploy.yaml"
+deploy_file = File.join magic_root, "bundles.yaml"
 unless deploy_path
 	puts "no deploy path provided, using default" if verbose
-	deploy_path = File.join artifacts_root, "deploy"
-	# create the root deploy directory unless it exists
+	deploy_path = File.join artifacts_root, "bundles"
+	# create the root bundles directory unless it exists
 	FileUtils.mkdir_p deploy_path unless Dir.exists? deploy_path
 end
 # ensure the paths exist
-error "path doesn't exist: '#{deploy_path}'"                    unless Dir.exist? deploy_path
-error "temp script folder doesn't exist: '#{temp_script_root}'" unless Dir.exist? temp_script_root
-error "deploy.yaml not found in MagicRoot ('#{magic_root}')."   unless File.exist? deploy_file
+error "path doesn't exist: '#{deploy_path}'"                    unless Dir.exist?  deploy_path
+error "temp script folder doesn't exist: '#{temp_script_root}'" unless Dir.exist?  temp_script_root
+error "bundles.yaml not found in MagicRoot ('#{magic_root}')."  unless File.exist? deploy_file
 # sanitize
 project_root     = project_root.gsub('\\', '/')
 bin_root         = bin_root.gsub('\\', '/')
@@ -223,7 +223,7 @@ end
 
 
 
-## parse, sanity check and sanitize deploy.yaml ##
+## parse, sanity check and sanitize bundles.yaml ##
 known_meta = ["variants", "platforms", "vp_configs", "formats", "targets", "version"]
 begin
 	user_meta = YAML.load_file deploy_file
@@ -664,7 +664,7 @@ deploy_bundles.each_pair { |bundle_name, bundle_meta|
 	create_file file_name, deployed_bundle_meta.to_yaml
 }
 
-summary = "deployed #{deploy_bundles.length} bundles."
-summary = "\n" + summary + ". involving #{counter} files." if verbose
+summary = "deployed #{deploy_bundles.length} bundle#{deploy_bundles.length > 1 ? '' : 's'}."
+summary = "\n" + summary + ". involving #{counter} file#{counter > 1 ? '' : 's'}." if verbose
 
 puts summary

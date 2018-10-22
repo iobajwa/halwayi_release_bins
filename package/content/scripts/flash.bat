@@ -83,7 +83,7 @@ set variant_count=0
 FOR /F "tokens=*" %%F IN ('list variant_count') do SET variant_count=%%F
 if %variant_count% GTR 1 if ["%var%"]==[""] (
 	echo ERROR: Cannot flash multiple variants
-	goto f_exit
+	goto ferr_exit
 )
 if [%variant_count%]==[1] (
 	rem get the default variant name in case there is only a single variant defined.
@@ -121,7 +121,7 @@ if %platform_count%==0 (
 if %platform_count% GTR 1 (
 	echo ERROR: Cannot flash multiple platforms 
 	echo        %platform_count% platforms available for '%var%' variant
-	goto f_exit
+	goto ferr_exit
 )
 
 
@@ -130,7 +130,8 @@ if %platform_count% GTR 1 (
 set project_name=
 FOR /F "tokens=*" %%F IN ('list project_name') do SET project_name=%%F
 if ["%project_name%"]==[""] (
-	goto f_exit
+	echo ERROR: Project name could not be determined
+	goto ferr_exit
 )
 
 	rem figure out the release_cpu
@@ -176,9 +177,9 @@ if [%native%] NEQ [] (
 		IF exist "%mdbPath%" (
 			call "%mdbPath%" "%mdb_script%"
 
-			if %ERRORLEVEL% GTR 0 (
+			if errorlevel 1 (
 				echo ERROR: Failed to program platform
-				goto f_exit
+				goto ferr_exit
 			)
 		) else (
 			echo Could not locate mdb.bat
@@ -193,13 +194,13 @@ if [%native%] NEQ [] (
 			echo flashing using stlink - %FlashToolInterface% - %native_exec_path%
 			call "%stlinkPath%" -c %FlashToolInterface% -p %native_exec_path% -v -Rst
 
-			if %ERRORLEVEL% GTR 0 (
+			if errorlevel 1 (
 				echo ERROR: Failed to program platform
-				goto f_exit
+				goto ferr_exit
 			)
 		) else (
-			echo Could not locate ST-LINK_CLI.exe
-			goto f_exit
+			echo ERROR: Could not locate ST-LINK_CLI.exe
+			goto ferr_exit
 		)
 	) else IF "%FlashTool%"=="jlink" (
 		echo .
@@ -240,18 +241,18 @@ if [%native%] NEQ [] (
 		IF exist "%jlinkPath%" (
 			call "%jlinkPath%" "%jlink_script%"
 
-			if %ERRORLEVEL% GTR 0 (
+			if errorlevel 1 (
 				echo ERROR: Failed to program platform
-				goto f_exit
+				goto ferr_exit
 			)
 		) else (
-			echo Could not locate JLink.exe
-			goto f_exit
+			echo ERROR: Could not locate JLink.exe
+			goto ferr_exit
 		)
 	) else (
 		echo .
 		echo ERROR: FlashTool not defined.
-		goto f_exit
+		goto ferr_exit
 	)
 )  
 
@@ -262,5 +263,13 @@ if [%ghost%] NEQ [] (
 	%exec_path%			rem ghost exectuable is run.
 )
 
+goto f_exit
+:ferr_exit
+endlocal
+set ERRORLEVEL=1
+goto f_end
+
 :f_exit
 endlocal
+
+:f_end

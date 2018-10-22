@@ -133,6 +133,9 @@ if ["%debug%"] NEQ [""] (
 	set debug=debug
 )
 call flash.bat %params% %native% %ghost% %debug% %var_chosen% %FeatureName% %platform_chosen%
+if errorlevel 1 (
+	exit /b 1
+)
 
 :exit_script
 echo Done.

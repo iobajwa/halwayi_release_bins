@@ -115,8 +115,8 @@ if [%ghost%]==[] if [%native%]==[] (
 	rem build the thing
 call halwayiWrapper.bat %native% %ghost% %halwayi_target%%debug% %feature_file% %var_chosen% %platform_chosen%
 
-if %ERRORLEVEL% GTR 0 (
-	exit /b %ERRORLEVEL%
+if errorlevel 1 (
+	exit /b 1
 )
 
 	

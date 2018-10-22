@@ -15,9 +15,9 @@ cd %ProjectRoot%
 
 call %HalwayiToolsRoot%\halwayiDelegator.bat %*
 
-if %ERRORLEVEL% GTR 0 (
+if errorlevel 1 (
 	popd
-	exit /b %ERRORLEVEL%
+	exit /b 1
 )
 
 popd

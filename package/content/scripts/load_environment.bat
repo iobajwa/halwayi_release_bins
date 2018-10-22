@@ -23,3 +23,8 @@ if EXIST environment.bat (
 ) else IF exist "..\..\..\..\..\..\..\..\environment.bat" (
 	call "..\..\..\..\..\..\..\..\environment.bat"
 )
+
+	rem flush error code from last run
+ver > nul
+set ERRORLEVEL=0
+	

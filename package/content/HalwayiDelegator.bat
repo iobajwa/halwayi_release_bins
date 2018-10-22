@@ -185,7 +185,7 @@ if %clean%==false if %build%==false (
 msbuild "%HalwayiToolsRoot%\project.builder" /v:%verbosity% /nologo /t:%msbuild_target% /p:ProjectFile="%projectToLoad%";BuildNative=%buildNative%;GlobPattern=%testFile%;BuildGhost=%buildGhost%;SelectedVariant="%selectedVariant%";BuildFeature="%featureToBuild%";FeatureName=%FeatureName%;SelectedPlatform=%selectedPlatform%;BuildIDE=%build_ide%;GhostToolchainName=%GhostToolchain%
 
 
-if %ERRORLEVEL% GTR 0 (
+if errorlevel 1 (
 	exit /b 1
 )
 	echo Done.

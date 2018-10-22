@@ -102,9 +102,9 @@ if ["%platform%"] NEQ [""] (
 
 call halwayiWrapper.bat %native% %ghost% %variant% %platform_chosen% %test_job% %glob%
 
-if %ERRORLEVEL% GTR 0 (
+if errorlevel 1 (
 	popd
-	exit /b %ERRORLEVEL%
+	exit /b 1
 )
 
 popd

@@ -70,6 +70,6 @@ set project_file=%ProjectRoot%\project.properties
 msbuild "%HalwayiToolsRoot%\project.query" /v:m /nologo /p:FieldToQuery=%field%;SelectedTarget="%target%";SelectedVariant="%var%";SelectedPlatform="%platform%";ProjectFile="%project_file%"
 
 popd
-if %ERRORLEVEL% GTR 0 exit /b %ERRORLEVEL%
+if errorlevel 1 exit /b 1
 
 :l_exit

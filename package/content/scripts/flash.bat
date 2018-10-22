@@ -266,10 +266,7 @@ if [%ghost%] NEQ [] (
 goto f_exit
 :ferr_exit
 endlocal
-set ERRORLEVEL=1
-goto f_end
+exit /b 1
 
 :f_exit
 endlocal
-
-:f_end

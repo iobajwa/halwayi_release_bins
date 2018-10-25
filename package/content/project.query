@@ -49,14 +49,8 @@ Please refer to Halwayi's license agreement for more details
 
 
   <Target Name="Interogate" DependsOnTargets="_CreateVariantBatch">
-    <PropertyGroup Condition=" '$(FieldToQuery)' =='project_name' OR 
-                               '$(FieldToQuery)' =='ProjectName' OR
-                               '$(FieldToQuery)' =='projectName' OR
-                               '$(FieldToQuery)' =='projectname'">
-      <Handeled>true</Handeled>
-    </PropertyGroup>
-    <Message Text="$(ProjectName)" Importance="high" Condition=" '$(Handeled)' =='true' "/>
     <ProjectQueryTask Field="$(FieldToQuery)" 
+                      ProjectName="$(ProjectName)"
                       SelectedTarget="$(SelectedTarget)"
                       SelectedVariant="$(SelectedVariant)" 
                       SelectedPlatform="$(SelectedPlatform)" 

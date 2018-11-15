@@ -1,28 +1,31 @@
-Important - Read carefully:
+			SOFTWARE LICENSING AGREEMENT
+BETWEEN:
+AVIDBOTS CORP. (“Avidbots” or “Licensee”)
+- and - 
+BHAVNIT SINGH BAJWA (“Licensor” or “Author”)
+WHEREAS,
+The Licensor grants the Licensee a non-exclusive and non-transferable License to use the software or parts thereof for in-house software development purposes only, i.e. the software can be used to create Avidbots product(s) and/or Avidbots service(s) (“Avidbots products and services”) but shall not become a part of Avidbots products and services. Any other use of the software package is prohibited without prior written authorization from the author.
+NOW THEREFORE THIS AGREEMENT WITNESSETH THAT IN CONSIDERATION of good and valuable consideration,  the sufficiency and receipt of which is hereby acknowledged, and subject to the terms and conditions hereof, the Author hereby grants Avidbots a non-exclusive, worldwide, perpetual, irrevocable, fully paid-up and a royalty free license to all previous versions of the software installed on the equipment of Avidbots Corp. and to the most-recent version of the software installed on the equipment of Avidbots Corp.
 
 DEFINITIONS:
-For the purpose of this agreement, the terms shall have the following meaning:
-
+For the purpose of this agreement, the following terms shall have the following designated meaning:
 "Licensor" and "Author" shall mean Bhavnit Singh Bajwa, R/O 71 Rollingwood Drive, Brampton, ON, Canada - L6Y 5R1
-
 The "software" means all Halwayi 0.3.0 related software components included in the Halwayi 0.3.0 software & documentation pack provided by the Author.
 
-
 1. LICENSE AGREEMENT
-This license is a legal agreement between Avidbots Corp. (Kitchener 975 Bleams Road #5, Kitchener, ON, N2E 3Z5 Canada and Bhavnit Singh Bajwa.
-By downloading and/or using Halwayi 0.3.0 software package (herein referred to as "Halwayi", "Halwayi 0.3.0", "software"), you agree to be bound by the terms of this agreement.
+This license is a legal agreement between Avidbots Corp. (975 Bleams Road #5, Kitchener, ON, N2E 3Z5 Canada) and Bhavnit Singh Bajwa.
+By downloading, installing or using Halwayi 0.3.0 software package, tools and items ancillary to the software (herein referred to as "Halwayi", "Halwayi 0.3.0", "software"), Avidbots hereby expressly agrees to be bound by all the following Terms and Conditions of Use (hereinafter "Terms of Use"). The software, tools and the items ancillary to the software are the property of Bhavnit Singh Bajwa ("Bajwa"). Your acceptance of these terms of use will be assumed if you continue to use the software or keep it installed on your equipment. Bajwa reserves the right, at his sole discretion, to change, modify, add or remove portions of these Terms of Use, at any time. It is your responsibility to check these Terms of Use periodically for changes. Your continued use of the software following the posting of changes will mean that you accept and agree to the changes of these Terms of Use. As long as you comply with these Terms of Use, Bajwa grants you a personal, non-exclusive, non-transferable privilege to use the Software.
 
 2. LICENSE GRANT
 These terms apply to the entire Halwayi 0.3.0 software & documentation pack, developed by Author.
 The software consists of proprietary, unpublished products of Author.
 All rights, title and interest in the software are and shall remain with the Author.
-Licensor grants Licensee a non-exclusive and non-transferable License to use the software or parts thereof for in-house software development purposes only. Any other use of the software package is prohibited without prior written authorization from the author.
-Any (re)distribution or shipment of the software requires the prior written authorization from the Author in each instance.
+Any distribution and/or redistribution and/or shipment of the software (in any shape or form) requires the prior written authorization from the Author in each instance.
 All copies of the software, must bear all copyright, trademarks and other proprietary notices included thereon by the Author.
 This License does not entitle Licensee to receive from the Author hard-copy documentation, technical support, telephone assistance, or enhancements.
 
 3. RESTRICTIONS
-Licensee may not:
+Licensee shall not:
 (a) decompile, disassemble, reverse engineer, modify or otherwise attempt to derive the source code of the software,
 (b) redistribute, encumber, sell, rent, lease, sublicense, or otherwise transfer rights of the software,
 (c) remove or alter any trademark, logo, copyright or other proprietary notices, legends, symbols or labels of the software,
@@ -37,7 +40,6 @@ Without prejudice to any other rights, Licensor may terminate this agreement if 
 6. PROPRIETARY RIGHTS
 Title, ownership rights, commercial rights, moral and intellectual property rights in the software shall remain by Author. Licensee acknowledges and agrees to Author's such title, ownership rights, commercial rights, moral and intellectual property rights and will not take any action to jeopardize, limit or interfere in any manner with the Author's ownership of or rights with respect to the software. Author's rights extend to all future or past modifications, changes, bug fixes, and/or improvements (irrespective of the nature of the change).
 
-
 7. DISCLAIMER OF WARRANTY
 The software is provided on an "as is" basis, without warranty of any kind, including without limitation the warranties that it is free of defects, merchantable, fit for a particular purpose or non-infringing. The entire risk as to the quality and performance of the software is borne by Licensee. Should the software prove defective in any respect, Licensee and not Licensor assumes the entire cost of any service and repair. In addition Licensee must determine that the software sufficiently meets its requirements. This disclaimer of warranty constitutes an essential part of this agreement. No use of the software is authorized hereunder except under this disclaimer.
 
@@ -46,7 +48,6 @@ To the maximum extent permitted by applicable law, in no event will Licensor wil
 
 9. HIGH RISK ACTIVITIES
 The software is not designed for use in hazardous environments requiring fail-safe performance, such as in the operation of nuclear facilities, aircraft navigation or communication systems, air traffic control, direct life support machines, or weapons systems, in which the failure of the software could lead directly to death, personal injury, or severe physical or environmental damage ("High Risk Activities"). Accordingly, Licensor specifically disclaim any express or implied warranty of fitness for High Risk Activities.
-
 10. MISCELLANEOUS
 (a) This agreement constitutes the entire agreement between the parties concerning the subject matter hereof.
 (b) This agreement may be changed only by an amendment in writing, signed by both parties.
@@ -56,4 +57,5 @@ The software is not designed for use in hazardous environments requiring fail-sa
 (f) Neither party shall be in default or be liable for any delay, failure in performance (excepting the obligation to pay) or interruption of service resulting directly or indirectly from any cause beyond its reasonable control.
 (g) The relationship between Licensor and Licensee is that of independent contractors and neither Licensee nor its agents shall have any authority to bind Licensor in any way.
 (h) If any of Author's professional services are being provided, then such professional services are provided pursuant to the terms of a separate professional services agreement between the parties. The parties acknowledge that such services are acquired independently of the product licensed hereunder, and that provision of such services is not essential to the functionality of such product.
-(i) This License entitles the Licensee to receive minor updates/bug-fixes from the Author, as and when those will be available. All Major revisions will be licensed separately. Halwayi software package follows the Major.Minor.Bug_Fix conversioning convention.
+(i) This License does not entitle Licensee to receive any bug-fixes, updates, enhancements, technical support, and or hard-copy documentation.
+(j) Halwayi software package follows the Major.Minor.Bug_Fix.Experimental versioning convention.

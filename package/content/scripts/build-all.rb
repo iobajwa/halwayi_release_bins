@@ -232,6 +232,7 @@ project_name = string_to_lines(`list project_name`)[0]
 puts "complete target list is #{target_list}"
 
 # get a list of features specific to each target
+total_feature_count   = 0
 targets_features_list = {}
 target_list.each { |tname|
 	next if targets_filtered.length > 0 && !targets_filtered.include?(tname)
@@ -256,6 +257,7 @@ target_list.each { |tname|
 	}
 	error "#{tname}: no feature to build" if features_to_build.length == 0
 	targets_features_list[tname] = features_to_build
+	total_feature_count += features_to_build.length
 }
 
 # create a mental model of everything- target trees, unique namespace lists, etc.
@@ -267,8 +269,16 @@ targets_features_list.each_pair { |tname, feature_list|
 	targets[tname] = { :tname => tname, :tree => tree, :features => feature_list, :root_namespaces => root_namespaces, :unique_namespaces => unique_namespaces }
 }
 
-puts "filtered target list is '#{targets_features_list.keys}'"
+puts "filtered target list is '#{targets_features_list.keys}' (#{targets_features_list.keys.length})"
 puts ""
+
+def calculate_etd_seconds time_consumed_so_far, total_feature_count, feature_count_built_so_far
+	return "unknown" if feature_count_built_so_far == 0
+	average_time            = time_consumed_so_far / feature_count_built_so_far
+	feature_count_remaining = total_feature_count - feature_count_built_so_far 
+	etd                     = average_time * feature_count_remaining
+	return etd.to_i
+end
 
 # build all targets and gather reports
 total_build_count    = 0
@@ -292,8 +302,8 @@ targets.each_pair { |tname, tmeta|
 
 		feature_name_transformed = tname + '.' + feature_name.gsub('/', '.') + ".build-output.txt"
 		output_file = File.join output_path, feature_name_transformed
-		puts "building '#{tname}/#{feature_name}' feature"
-		puts "output: #{output_file}"
+		puts "\tbuilding '#{tname}/#{feature_name}' feature"
+		puts "\toutput: #{output_file}"
 
 		exit_code = build_result = nil
 		start_time = Time.now
@@ -301,23 +311,26 @@ targets.each_pair { |tname, tmeta|
 		pid = Process.spawn "build #{tname} #{feature_name} > #{output_file} 2>&1"
 		begin
 			Timeout.timeout build_timeout do
-				puts "building.."
+				puts "\tbuilding.."
 				Process.wait pid
 				exit_code    = $?.exitstatus
 				build_result = exit_code == 0 ? :passed : :failed
-				puts "build finished: (result: #{build_result}, exit_code: #{exit_code})"
+				puts "\tbuild #{build_result} (#{exit_code})."
 			end
 		rescue Timeout::Error
-			puts "build timedout, killing it.."
+			puts "\tbuild timedout, killing it.."
 			system "taskkill /f /t /pid #{pid}"
 			exit_code    = -1
 			build_result = :timedout
 		end
-		puts ""
+		puts "\t"
 
 		# build completed, capture report
 		output     = File.exist?(output_file) ? File.readlines(output_file) : []
 		build_time = Time.now - start_time
+		puts "\ttook #{build_time} seconds." unless build_result == :timedout
+		etd_seconds = calculate_etd_seconds total_time + target_total_build_time, total_feature_count, total_build_count + target_total_build_count
+		puts "\tETD #{} seconds."
 
 		feature_node = tree.get_leaf feature_name
 		feature_node.meta = { :time => build_time, :result => build_result, :exit_code => exit_code, :output => output }
@@ -328,6 +341,10 @@ targets.each_pair { |tname, tmeta|
 		target_total_build_count    += 1
 		target_total_build_time     += build_time
 	}
+	
+	puts ""
+	puts "#{target_total_build_count} built, #{target_total_passed_count} succeeded."
+	puts "took #{target_total_build_time} seconds."
 	
 	tmeta[:build] = { 
 					  :time           => target_total_build_time,

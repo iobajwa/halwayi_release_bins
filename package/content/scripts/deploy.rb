@@ -11,14 +11,12 @@ A simple utility to deploy bundles. 'bundles' are halwayi's way of looking at de
 
   options: 
     
-  	--deploy-template : 
-
     --path          : the path to deploy the images listed in the bundles.yaml
                       default: $build_root/deploy
                       aliases: -p
 
     --build-scripts : generates the build scripts required to build the bundle(s)
-                      aliases: -b, --build_scripts
+                      aliases: -b, -s, --build_scripts
 
     --clean         : cleans the deployment
                       aliases: -c
@@ -85,7 +83,7 @@ def create_shell_script task, bundle_name, bundle_meta, temp_script_root, batch_
 		else
 			targets.each{ |tname, tmeta|
 				command  = "call #{task} #{bin_name} #{tname}"
-				batch_file_contents.push command , "if %ERRORLEVEL% GTR 0 goto out", ""
+				batch_file_contents.push command , "if errorlevel 1 goto out", ""
 			}
 		end
 	} 
@@ -162,7 +160,7 @@ ARGV.each_with_index { |e, i|
 		skip = true
 	when "e", "verbose"
 		verbose = true
-	when "b", "build_scripts"
+	when "b", "s", "build_scripts"
 		requested_actions[:gen_scripts] = true
 	when "c", "clean"
 		requested_actions[:clean] = true

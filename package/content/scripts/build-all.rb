@@ -14,23 +14,36 @@ Builds all targets if none are specified.
 
   options: 
     
+    --targets       : builds only the specified targets
+                      aliases: --target, -t
+                      default: <all-targets>
+
     --features      : builds only the specified features
-                      aliases: -f
+                      aliases: --feature, -f
+                      default: <all-features>
 
     --timeout       : for each build (in seconds)
                       default: 40
-                      aliases: -t
+                      aliases: -m
 
-    --path          : the path to keep build logs
+    --path          : the path to write build logs
                       default: $build_root/etc
-                      aliases: -p
+                      aliases: -o
 
-    --list          : lists the features that will be built for the specified (or all) targets(s)
-                      aliases: -l, --ld
+    --report_file   : filename to write the nunit compatible xml report file
+                      default: build-all-results.xml
+                      aliases: -r
+
+    --verbose       : aliases: -v
 
     --help          : -_-
                       aliases: -h, ?, -?, --?
 "
+
+# --list          : lists the features that will be built for the specified
+#                   target/feature flags
+#                   aliases: -l, --ld
+
 
 def string_to_lines(raw) raw.gsub("\r\n","\n").split("\n").map(&:strip) end
 def error_log(msg) STDERR.puts(msg); $encountered_error=true end
@@ -154,47 +167,64 @@ end
 # start
 # 
 
+puts ""
 # parse, sanity check and sanitize the command line args
-requested_actions = {}
+def parse_arg_list args, index
+	args_parsed = []
+	args[index..args.length].each { |v|
+		v = v.dup.strip
+		break if v.start_with? '-' or v == "?"
+		next if v == ";"
+		v.split(';').map(&:strip).each { |glob| args_parsed.push glob.gsub('\\', '/') }
+	}
+	return args_parsed
+end
+# requested_actions = {}
 targets_filtered  = []
 features_filtered = []
 output_path       = nil
 report_file       = nil
+verbose           = false
 build_timeout     = 40
 spawn_time        = Time.now.strftime("%H:%M:%S")
 spawn_date        = Date.today
-skip = false
+skip = 0
 ARGV.each_with_index { |e, i|
-	if skip
-		skip = false
+	if skip > 0
+		skip -= 1
 		next
 	end
 	case e.gsub(/^[-]*/, '').gsub('-', '_')
-	# when "b", "build_scripts"
-	# 	requested_actions[:gen_scripts] = true
-	when "t", "timeout"
+	when "m", "timeout"
 		build_timeout = ARGV[i + 1].to_i
-		skip = true
+		skip = 1
 	# when "l", "list"
 	# 	requested_actions[:list] = true
-	when "p", "path"
+	when "o", "path"
 		output_path = ARGV[i + 1]
-		skip = true
+		skip = 1
 	when "r", "report_file"
 		report_file = ARGV[i + 1]
-		skip = true
-	when "features", "f"
-		glob = ARGV[i + 1]
-		glob.split(';').map(&:strip).each { |glob| features_filtered.push glob.gsub('\\', '/') }
-		skip = true
+		skip = 1
+	when "features", "f", "feature"
+		features_parsed = parse_arg_list ARGV, i + 1
+		skip += features_parsed.length
+		features_filtered.push features_parsed
+	when "targets", "t", "target"
+		targets_parsed = parse_arg_list ARGV, i + 1
+		skip += targets_parsed.length
+		targets_filtered.push targets_parsed
+	when "verbose", "v"
+		verbose = true
 	when "?", "h", "help"
 		puts usage_text
 		exit
 	else
-		targets_filtered.push e
+		error "'#{e}' ?"
 	end
 }
 features_filtered.flatten!
+targets_filtered.flatten!
 
 ## discover the environment ##
 project_root       = ENV['ProjectRoot']
@@ -205,9 +235,9 @@ error "ProjectRoot not defined."                                  unless project
 error "ArtifactsRoot not defined."                                unless artifacts_root
 error "Invalid value specified for timeout ('#{build_timeout}')." unless build_timeout.class == Fixnum and build_timeout > 0
 unless output_path
-	puts "no deploy path provided, using default"
+	puts "no output path provided, using default" if verbose
 	output_path = File.join artifacts_root, "etc"
-	# create the root deploy directory unless it exists
+	# create the root output directory unless it exists
 	FileUtils.mkdir_p output_path unless Dir.exists? output_path
 end
 # ensure the paths exist
@@ -229,8 +259,8 @@ puts "output report path : #{report_file}"
 target_list  = string_to_lines `list target_names`
 project_name = string_to_lines(`list project_name`)[0]
 
-puts "complete target list is #{target_list}"
-
+puts ""
+puts "complete target list is #{target_list} (#{target_list.length})"
 # get a list of features specific to each target
 total_feature_count   = 0
 targets_features_list = {}
@@ -243,7 +273,7 @@ target_list.each { |tname|
 	found_marker = false
 	lines.each { |line|
 		unless found_marker
-			puts "skipping : #{line}"
+			puts "skipping : #{line}" if verbose
 			found_marker = true if line =~ /by naming/i
 			next
 		end
@@ -255,7 +285,8 @@ target_list.each { |tname|
 		next if features_filtered.length > 0 && !features_filtered.include?(l)
 		features_to_build.push l
 	}
-	error "#{tname}: no feature to build" if features_to_build.length == 0
+	error "#{tname}: no feature to build"                                if features_to_build.length == 0
+	puts  "#{tname}: #{features_to_build} (#{features_to_build.length})" if verbose
 	targets_features_list[tname] = features_to_build
 	total_feature_count += features_to_build.length
 }
@@ -269,7 +300,8 @@ targets_features_list.each_pair { |tname, feature_list|
 	targets[tname] = { :tname => tname, :tree => tree, :features => feature_list, :root_namespaces => root_namespaces, :unique_namespaces => unique_namespaces }
 }
 
-puts "filtered target list is '#{targets_features_list.keys}' (#{targets_features_list.keys.length})"
+puts ""
+puts "filtered target list is #{targets_features_list.keys} (#{targets_features_list.keys.length})"
 puts ""
 
 def calculate_etd_seconds time_consumed_so_far, total_feature_count, feature_count_built_so_far
@@ -277,7 +309,7 @@ def calculate_etd_seconds time_consumed_so_far, total_feature_count, feature_cou
 	average_time            = time_consumed_so_far / feature_count_built_so_far
 	feature_count_remaining = total_feature_count - feature_count_built_so_far 
 	etd                     = average_time * feature_count_remaining
-	return etd.to_i
+	return etd
 end
 
 # build all targets and gather reports
@@ -291,7 +323,7 @@ targets.each_pair { |tname, tmeta|
 	tree         = tmeta[:tree]
 	feature_list = tmeta[:features]
 
-	puts "building #{feature_list.length} feature#{feature_list.length > 1 ? 's' : ''} for '#{tname}' target.."
+	puts "#{tname}: #{feature_list.length} feature#{feature_list.length > 1 ? 's' : ''}"
 	target_total_build_count    = 0
 	target_total_passed_count   = 0
 	target_total_failed_count   = 0
@@ -302,8 +334,8 @@ targets.each_pair { |tname, tmeta|
 
 		feature_name_transformed = tname + '.' + feature_name.gsub('/', '.') + ".build-output.txt"
 		output_file = File.join output_path, feature_name_transformed
-		puts "\tbuilding '#{tname}/#{feature_name}' feature"
-		puts "\toutput: #{output_file}"
+		puts "    building '#{tname}/#{feature_name}' feature"
+		puts "    output: #{output_file}"
 
 		exit_code = build_result = nil
 		start_time = Time.now
@@ -311,26 +343,25 @@ targets.each_pair { |tname, tmeta|
 		pid = Process.spawn "build #{tname} #{feature_name} > #{output_file} 2>&1"
 		begin
 			Timeout.timeout build_timeout do
-				puts "\tbuilding.."
+				puts "    building.."
 				Process.wait pid
 				exit_code    = $?.exitstatus
 				build_result = exit_code == 0 ? :passed : :failed
-				puts "\tbuild #{build_result} (#{exit_code})."
 			end
 		rescue Timeout::Error
-			puts "\tbuild timedout, killing it.."
+			puts "    build timedout, killing it.."
 			system "taskkill /f /t /pid #{pid}"
 			exit_code    = -1
 			build_result = :timedout
 		end
-		puts "\t"
 
 		# build completed, capture report
 		output     = File.exist?(output_file) ? File.readlines(output_file) : []
 		build_time = Time.now - start_time
-		puts "\ttook #{build_time} seconds." unless build_result == :timedout
-		etd_seconds = calculate_etd_seconds total_time + target_total_build_time, total_feature_count, total_build_count + target_total_build_count
-		puts "\tETD #{} seconds."
+		puts "    build #{build_result}" + (build_result == :passed ? "" : " (#{exit_code})") + (build_result != :timedout ? ", took #{build_time} seconds." : "") unless build_result == :timedout
+		etd_seconds = calculate_etd_seconds total_time + target_total_build_time + build_time, total_feature_count, total_build_count + target_total_build_count + 1
+		puts "    ETD #{etd_seconds=='unknown' ? '' : '~'}#{etd_seconds.round}#{ etd_seconds=='unknown' ? '.' : ' seconds.'}"
+		puts "    "
 
 		feature_node = tree.get_leaf feature_name
 		feature_node.meta = { :time => build_time, :result => build_result, :exit_code => exit_code, :output => output }
@@ -342,9 +373,9 @@ targets.each_pair { |tname, tmeta|
 		target_total_build_time     += build_time
 	}
 	
+	puts "  #{target_total_build_count} built, #{target_total_passed_count} succeeded."
+	puts "  took #{target_total_build_time} seconds."
 	puts ""
-	puts "#{target_total_build_count} built, #{target_total_passed_count} succeeded."
-	puts "took #{target_total_build_time} seconds."
 	
 	tmeta[:build] = { 
 					  :time           => target_total_build_time,
@@ -362,9 +393,9 @@ targets.each_pair { |tname, tmeta|
 
 # print summary
 puts ""
-puts "summary"
-puts "   total: #{total_build_count}  succeeded: #{total_passed_count}  failed: #{total_failed_count}  timedout: #{total_timedout_count}"
-puts "   took #{total_time} seconds"
+puts "summary:"
+puts "  total: #{total_build_count}  succeeded: #{total_passed_count}  failed: #{total_failed_count}  timedout: #{total_timedout_count}"
+puts "  took #{total_time} seconds"
 puts ""
 
 # render the report to compatible test report

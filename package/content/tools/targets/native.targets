@@ -34,7 +34,7 @@ Please refer to Halwayi's license agreement for more details
     <PropertyGroup>
       <DebugBuild Condition=" '$(SelectedConfiguration)' == 'Release' ">false</DebugBuild>
     </PropertyGroup>
-    <Message Text="Debug Building Enabled: $(DebugBuild)" Importance="normal" />
+    <Message Text="Debug Building Enabled: $(DebugBuild)" Importance="low" />
   </Target>
 
 

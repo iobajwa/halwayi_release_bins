@@ -159,7 +159,7 @@ Please refer to Halwayi's license agreement for more details
 
   <Target Name= "_DelegateWorkToVariantBuilder" DependsOnTargets="_CreateVariantBatch" Outputs= "%(VariantsBatch.Identity)">
 
-    <Message Text= "=== %(VariantsBatch.Variant) : %(VariantsBatch.Platform) ===" Importance="high" />
+    <Message Text= "=== %(VariantsBatch.Variant) : %(VariantsBatch.Platform) ===" Importance="high" Condition="'@(VariantsBatch->Count())' &gt; 1"/>
     
         <!-- Setup default settings if none has been provided for this variant -->
         <CheckMetadataTask Items="@(VariantsBatch)" ItemToSearch="%(VariantsBatch.Identity)" MetadataToCheck="Recipes">

@@ -460,7 +460,7 @@ Please refer to Halwayi's license agreement for more details
 	<Target Name= "_AfterBuild" />
 
 	<Target Name="_SetupBuildAllProperties" DependsOnTargets="_SetupBuildProperties">
-		<Message Text="Building using feature file: $(BuildFeature)" Importance="Normal" Condition="Exists($(BuildFeature))"/>
+		<Message Text="Building using feature file: $(BuildFeature)" Importance="Low" Condition="Exists($(BuildFeature))"/>
     	<MakeDir Directories="$(IdeFolderRoot)" />
     	<MakeDir Directories="$(VariantIdeFolder)" />
     	<MakeDir Directories="$(IdeFolder)" />
@@ -483,7 +483,7 @@ Please refer to Halwayi's license agreement for more details
 			<ReleaseDefines>$(ReleaseDefines);$(_DefinesEncodedInFeature)</ReleaseDefines>
 		</PropertyGroup>
 
-		<Message Text="Found Defines: $(ReleaseDefines)" Importance="Normal" Condition=" '$(_DefinesEncodedInTest)' != '' "/>
+		<Message Text="Found Defines: $(ReleaseDefines)" Importance="Low" Condition=" '$(_DefinesEncodedInTest)' != '' "/>
 	</Target>
 
 	<Target Name= "_SetupGhostRelatedBuildProperties">
@@ -546,7 +546,7 @@ Please refer to Halwayi's license agreement for more details
 			<GhostLinkFile>$(GhostArtifactFolder)$(TargetName)_ghost.links</GhostLinkFile>
 		</PropertyGroup>
 		<LinkFileCreationTask LinkFile= "$(GhostLinkFile)" Links= "@(ClCompile)" ItemName= "ClCompile"/>
-		<Message Text="Link File: $(GhostLinkFile)" Importance="normal" />
+		<Message Text="Link File: $(GhostLinkFile)" Importance="Low" />
 	</Target>
 
 
@@ -563,7 +563,7 @@ Please refer to Halwayi's license agreement for more details
 			<NativeLinkFile>$(NativeIntDir)$(TargetName)_native.links</NativeLinkFile>
 		</PropertyGroup>
 		<LinkFileCreationTask LinkFile= "$(NativeLinkFile)" Links= "@(NativeCompile)" ItemName= "NativeCompile"/>
-		<Message Text="Link File: $(NativeLinkFile)" Importance="normal" />
+		<Message Text="Link File: $(NativeLinkFile)" Importance="Low" />
 	</Target>
 
 

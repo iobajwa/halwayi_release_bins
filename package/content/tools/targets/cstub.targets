@@ -62,10 +62,10 @@ Please refer to Halwayi's license agreement for more details
       <RunnerIncludeFilesItem Include="@(StubableFilesItemRaw)" />
     </ItemGroup>
 
-    <Message Text= "Discovered Stubable Files:" Importance= "normal"  Condition= " '$(StubableFilesCount)' != '0' " />
-    <Message Text= "     %(StubableFilesItem.Identity)" Importance= "normal"  Condition= " '$(StubableFilesCount)' != '0' " />
-    <Message Text= "Discovered Stub Metadata:" Importance= "normal"  Condition= " '$(StubableFilesCount)' != '0' " />
-    <Message Text= "    %(StubMetaDataItem.Identity)" Importance= "normal"  Condition= " '$(StubableFilesCount)' != '0' " />
+    <Message Text= "Discovered Stubable Files:" Importance= "low"  Condition= " '$(StubableFilesCount)' != '0' " />
+    <Message Text= "     %(StubableFilesItem.Identity)" Importance= "low"  Condition= " '$(StubableFilesCount)' != '0' " />
+    <Message Text= "Discovered Stub Metadata:" Importance= "low"  Condition= " '$(StubableFilesCount)' != '0' " />
+    <Message Text= "    %(StubMetaDataItem.Identity)" Importance= "low"  Condition= " '$(StubableFilesCount)' != '0' " />
   </Target>
 
 
@@ -84,7 +84,7 @@ Please refer to Halwayi's license agreement for more details
   
   
   <Target Name="_GenerateStubs" DependsOnTargets="_GenerateStubsForGhost;_GenerateStubsForNative" Condition=" '$(StubableFilesCount)' != '0' ">
-    <Message Text="Generated $(StubableFilesCount) stub(s)." Importance="Normal" />
+    <Message Text="Generated $(StubableFilesCount) stub(s)." Importance="low" />
   </Target>
 
   <Target Name= "_GenerateStubsForGhost" Condition="'$(BuildGhostAlso)' == 'true'">

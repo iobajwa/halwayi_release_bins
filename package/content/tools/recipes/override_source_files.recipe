@@ -49,7 +49,7 @@
   -->
 
   <Target Name = "_CreateSourceFileLists" DependsOnTargets="__BeforeOverriding;__ConvertSourceListsToAbsolutePaths;_CreateGhostSourceFileList;_CreateNativeSourceFileList">
-    <Message Text = "Source files overriden." Importance="normal" />
+    <Message Text = "Source files overriden." Importance="low" />
   </Target>
 
   <Target Name="__ConvertSourceListsToAbsolutePaths" DependsOnTargets="__ConvertGhostSourceListsToAbsolutePaths;__ConvertNativeSourceListsToAbsolutePaths">

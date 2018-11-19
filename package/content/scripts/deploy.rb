@@ -420,26 +420,23 @@ deploy_bundles.each_pair { |bundle_name, bundle_meta|
 }
 
 
-## clean, if requested ##
-if requested_actions.include?(:clean)
-
-	if applied_filter
-		deploy_bundles.each_pair { |name, meta| 
-			bundle_deploy_path = meta[:deploy_path]
-			FileUtils.rm_rf bundle_deploy_path if Dir.exists? bundle_deploy_path
-			f = delete_shell_script "build", name, temp_script_root
-			puts "deleted '#{f}" if f and verbose
-			f = delete_shell_script "build clean", name, temp_script_root
-			puts "deleted '#{f}" if f and verbose
-			puts "cleaned '#{name}'" if verbose
-		}
-	else
-		# simply delete the root and we're good to go
-		FileUtils.rm_rf deploy_path if Dir.exists? deploy_path
-		puts "cleaned everything" if verbose
-	end
-	exit
+## always clean, exit if requested ##
+if applied_filter
+	deploy_bundles.each_pair { |name, meta| 
+		bundle_deploy_path = meta[:deploy_path]
+		FileUtils.rm_rf bundle_deploy_path if Dir.exists? bundle_deploy_path
+		f = delete_shell_script "build", name, temp_script_root
+		puts "deleted '#{f}" if f and verbose
+		f = delete_shell_script "build clean", name, temp_script_root
+		puts "deleted '#{f}" if f and verbose
+		puts "cleaned '#{name}'" if verbose
+	}
+else
+	# simply delete the root and we're good to go
+	FileUtils.rm_rf deploy_path if Dir.exists? deploy_path
+	puts "cleaned everything" if verbose
 end
+exit if requested_actions.include?(:clean)
 
 
 ## generate scripts (always) ##

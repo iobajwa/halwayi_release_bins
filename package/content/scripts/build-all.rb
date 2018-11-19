@@ -227,13 +227,13 @@ features_filtered.flatten!
 targets_filtered.flatten!
 
 ## discover the environment ##
-project_root       = ENV['ProjectRoot']
-artifacts_root     = ENV['ArtifactsRoot']
-report_file        = File.join artifacts_root, "build-all-results.xml" unless report_file
+project_root   = ENV['ProjectRoot']
+artifacts_root = ENV['ArtifactsRoot']
 # sanity check
-error "ProjectRoot not defined."                                  unless project_root
-error "ArtifactsRoot not defined."                                unless artifacts_root
-error "Invalid value specified for timeout ('#{build_timeout}')." unless build_timeout.class == Fixnum and build_timeout > 0
+error "ArtifactsRoot undefined" unless artifacts_root
+error "ProjectRoot undefined"   unless project_root
+report_file = File.join artifacts_root, "build-all-results.xml" unless report_file
+error "Invalid value specified for timeout ('#{build_timeout}')."  unless build_timeout.class == Fixnum and build_timeout > 0
 unless output_path
 	puts "no output path provided, using default" if verbose
 	output_path = File.join artifacts_root, "etc"
@@ -272,12 +272,14 @@ target_list.each { |tname|
 	lines             = lines[1..lines.length-1]
 	found_marker = false
 	lines.each { |line|
-		unless found_marker
-			puts "skipping : #{line}" if verbose
-			found_marker = true if line =~ /by naming/i
-			next
+		unless line =~ /final/i
+			unless found_marker
+				puts "skipping : #{line}" if verbose
+				found_marker = true if line =~ /by naming/i
+				next
+			end
+			next if line =~ /convention/i
 		end
-		next if line =~ /convention/i
 		l = line.strip
 		next if l == ""
 		name = File.basename l

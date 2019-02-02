@@ -49,6 +49,7 @@ Please refer to Halwayi's license agreement for more details
       <DebugBuild>true</DebugBuild>
       <GhostProcessor>dummy</GhostProcessor>
       <ToolChainPath>dummy</ToolChainPath>
+      <Directives>$(Directives);__GHOST__</Directives>
     </PropertyGroup>
 
     <ToolchainDiscoveryTask CPU="gcc" Toolchains="@(Toolchains)">

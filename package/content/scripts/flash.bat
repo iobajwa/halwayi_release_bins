@@ -249,12 +249,14 @@ if [%native%] NEQ [] (
 			echo ERROR: Could not locate JLink.exe
 			goto ferr_exit
 		)
+	) else IF exist "%FlashTool%" (
+		call "%FlashTool%" %native_exec_path%
 	) else (
 		echo .
 		echo ERROR: FlashTool not defined.
 		goto ferr_exit
 	)
-)  
+)
 
 	rem flash ghost
 if [%ghost%] NEQ [] (
@@ -264,6 +266,7 @@ if [%ghost%] NEQ [] (
 )
 
 goto f_exit
+
 :ferr_exit
 endlocal
 exit /b 1

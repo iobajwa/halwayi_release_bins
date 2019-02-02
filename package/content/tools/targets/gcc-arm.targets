@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+Copyright Bhavnit Singh Bajwa   iobajwa@gmail.com
+Please refer to Halwayi's license agreement for more details
+-->
+
+
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+
+
+  <!-- 
+  ************************************************************************************************************************
+                                              Include External Dependencies
+  ************************************************************************************************************************
+  -->
+
+  <UsingTask AssemblyFile="$(BuilderTasksPath)\halwayiTasks.dll" TaskName="GCCArmBuild"/>
+  <UsingTask AssemblyFile="$(BuilderTasksPath)\halwayiTasks.dll" TaskName="IDEProjectCreatorTask"/>
+  
+  
+  
+  
+  
+  
+
+  <!--
+  ************************************************************************************************************************
+                                                     Public Targets
+  ************************************************************************************************************************
+  -->
+
+  <Target Name="NativeBuild">
+    <GCCArmBuild SourceFiles="@(NativeCompile)" ArtifactsFolder="$(NativeIntDir)" BinFolder="$(OutDir)" 
+              IncludePaths="@(NativeIncludedPathsItem)" OutputName="$(OutputName)" CreateExecutable="true" 
+              DebugBuild="$(DebugBuild)" PreprocessorDirectives="$(Directives)" Processor="$(NativeProcessor)" 
+              PossibleToolChainRootPaths="$(ToolChainPath)" 
+              ToolBinariesTimeoutPeriod="$(ToolChainTimeoutPeriod)" MaximumParallelRuns="$(CoresUsage)"
+              ProjectRoot="$(ProjectRoot)" LinkerArgs="$(NativeLinkerArgs)" CompilerArgs="$(NativeCompilerArgs)" />
+  </Target>
+
+  <Target Name="NativeIdeBuild" Condition="'$(BuildIDE)' == 'true'">
+    <IDEProjectCreatorTask ProjectName="$(IDEProjectName)" SourceFiles="@(NativeCompile)" PreprocessorDirectives="$(Directives)"
+      IncludePaths="@(NativeIncludedPathsItem)" CompilerArgs="$(NativeCompilerArgs)" LinkerArgs="$(NativeLinkerArgs)"
+      ToolchainPath="$(ToolChainPath)" Processor="$(NativeProcessor)" OutputPath="$(IdeFolder)" 
+      ProjectRoot="$(ProjectRoot)"/>
+  </Target>
+
+
+</Project>

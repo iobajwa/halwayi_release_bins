@@ -62,6 +62,10 @@ Please refer to Halwayi's license agreement for more details
 		<TargetName></TargetName>
 		<NativeIntDir></NativeIntDir>
 		<PlatformName></PlatformName>
+
+		<!-- inline properties -->
+		<ArgDirectives></ArgDirectives>
+		<ArgPaths></ArgPaths>
   </PropertyGroup>
 
 
@@ -84,6 +88,7 @@ Please refer to Halwayi's license agreement for more details
 	<UsingTask AssemblyFile= "$(BuilderTasksPath)\halwayiTasks.dll" TaskName= "LinkFileCreationTask" />
 	<UsingTask AssemblyFile= "$(BuilderTasksPath)\halwayiTasks.dll" TaskName= "TransformDefinesTask" />
 	<UsingTask AssemblyFile= "$(BuilderTasksPath)\halwayiTasks.dll" TaskName= "FeatureBuildConfigValidatorTask" />
+	<UsingTask AssemblyFile= "$(BuilderTasksPath)\halwayiTasks.dll" TaskName= "BuildInlinePropertiesGenTask" />
 
 
 
@@ -119,6 +124,7 @@ Please refer to Halwayi's license agreement for more details
 													_TransposeDefines;
 													_BeforeSetup;
 													_SetupBuildAllProperties;
+													_SetupInlineProperties;
 													_AfterSetup;
 													_BuildGhostExe;
 													_BuildNativeExe;
@@ -449,6 +455,13 @@ Please refer to Halwayi's license agreement for more details
 	    <TransformDefinesTask Directives="$(ReleaseDefines)" Symbol="?" Replacement="=">
 	    	<Output PropertyName= "ReleaseDefines" TaskParameter= "ProcessedOutput" />
 	    </TransformDefinesTask>
+	</Target>
+
+	<Target Name="_SetupInlineProperties">
+		<BuildInlinePropertiesGenTask Directives="$(ReleaseDefines)" Paths="@(NativeIncludedPathsItem)" >
+	    	<Output PropertyName= "ArgDirectives" TaskParameter= "ProcessedDirectives" />
+	    	<Output PropertyName= "ArgPaths" TaskParameter= "ProcessedPaths" />
+	    </BuildInlinePropertiesGenTask>
 	</Target>
   
 	<!-- Setups properties for the build process -->

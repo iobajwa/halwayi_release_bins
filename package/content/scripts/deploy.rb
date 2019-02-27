@@ -250,6 +250,7 @@ user_meta.each_pair { |bundle_name, bundle_meta|
 	# parse the deploy bundle
 	local_version = nil
 	bins = {}
+	assets = { :dirs => {}, :files => {} }
 	if bundle_meta.class == Array
 		bundle_meta.each { |b| 
 			source, destination = parse_source_destination b
@@ -262,8 +263,20 @@ user_meta.each_pair { |bundle_name, bundle_meta|
 		local_vp_configs = sanitize_array_meta bundle_meta["vp_configs"]
 		local_formats    = sanitize_array_meta bundle_meta["formats"]
 		local_targets    = sanitize_array_meta bundle_meta["targets"]
-		error "'#{bundle_name}' bundle: no bins listed" unless bundle_meta.include? "bins"
-		bundle_meta["bins"].each { |b|
+		bundle_bins      = bundle_meta["bins"]
+		bundle_assets    = bundle_meta["assets"]
+		error "'#{bundle_name}' bundle: no bins and assets listed" if bundle_bins == nil and bundle_assets == nil
+
+		# parse bundle assets
+		bundle_assets.each { |a|
+			source, destination = parse_source_destination a
+			category = File.directory?(source) ? :dirs : :files
+			relative_path = File.dirname destination
+			assets[category][source] = { :destination => destination, :relative_path => relative_path }
+		} if bundle_assets
+
+		# parse bundle bins
+		bundle_bins.each { |b|
 			applicable_targets    = local_targets
 			applicable_targets    = global_targets   unless applicable_targets
 			applicable_variants   = local_variants
@@ -338,7 +351,7 @@ user_meta.each_pair { |bundle_name, bundle_meta|
 
 			# we now have a bin meta
 			bins[source] = { :vp_configs => applicable_vp_configs, :targets => applicable_targets, :formats => applicable_formats, :destination => destination, :version => applicable_version }
-		}
+		} if bundle_bins
 	end
 
 	# figure out the applicable_version
@@ -365,7 +378,8 @@ user_meta.each_pair { |bundle_name, bundle_meta|
 		bmeta[:vp_configs] = vp_configs.flatten
 	}
 
-	deploy_bundles[bundle_name] = { :bins => bins, :version => applicable_version }
+	assets = {} if assets[:dirs] == {} and assets[:files] == {}
+	deploy_bundles[bundle_name] = { :bins => bins, :version => applicable_version, :assets => assets }
 }
 
 # filter bundles and ensure user provided meaningful filter
@@ -428,13 +442,13 @@ if applied_filter
 		f = delete_shell_script "build", name, temp_script_root
 		puts "deleted '#{f}" if f and verbose
 		f = delete_shell_script "build clean", name, temp_script_root
-		puts "deleted '#{f}" if f and verbose
+		puts "deleted '#{f}"     if f and verbose
 		puts "cleaned '#{name}'" if verbose
 	}
 else
 	# simply delete the root and we're good to go
 	FileUtils.rm_rf deploy_path if Dir.exists? deploy_path
-	puts "cleaned everything" if verbose
+	puts "cleaned everything"   if verbose
 end
 exit if requested_actions.include?(:clean)
 
@@ -464,27 +478,51 @@ end
 
 
 
-# ensure all the requested bins exist
-non_existant_bundles = {}
+# ensure all the requested bins and assets exist
+bundles_with_missing_bins   = {}
+bundles_with_missing_assets = {}
 deploy_bundles.each_pair { |bundle_name, bundle_meta|
-	bundle_bins_exist = true
+	bins_exist, assets_exit = true, true
 	bundle_meta[:bins].each_pair { |bin_name, bin_meta|
 		bin_meta[:images].each_pair { |iname, imeta|
 			unless Dir.exist? imeta[:full_path]
-				bundle_bins_exist = false
+				bins_exist = false
 				break
 			end
 		}
 	}
-	non_existant_bundles[bundle_name] = bundle_meta unless bundle_bins_exist
+	bundles_with_missing_bins[bundle_name] = bundle_meta unless bins_exist
+	
+	if bundle_meta[:assets].length > 0
+		bundle_meta[:assets][:dirs].keys.each  { |a| 
+			unless Dir.exist?(a)
+				bundles_with_missing_assets[bundle_name] = [] if bundles_with_missing_assets[bundle_name] == nil
+				bundles_with_missing_assets[bundle_name].push a
+			end
+		}
+		bundle_meta[:assets][:files].keys.each { |a| 
+			unless File.exist?(a)
+				bundles_with_missing_assets[bundle_name] = [] if bundles_with_missing_assets[bundle_name] == nil
+				bundles_with_missing_assets[bundle_name].push a
+			end
+		}
+	end
 }
-if non_existant_bundles.length > 0
+if bundles_with_missing_bins.length > 0
 	script_name = ""
-	non_existant_bundles.keys.each { |b| script_name += "build-#{b} / " }
+	bundles_with_missing_bins.keys.each { |b| script_name += "build-#{b} / " }
 	script_name.chomp!(' / ')
-	error_log "Could not find all binaries needed for deployment."
-	error     "Use '#{script_name}' to build the needed binaries."
+	error_log "Could not locate all binaries needed for deployment."
+	error_log "Use '#{script_name}' to build the needed binaries."
 end
+if bundles_with_missing_assets.length > 0
+	bundle_names = ""
+	bundles_with_missing_assets.each_pair { |b,a| 
+		error_log "Could not locate following assets for '#{b}':"
+		a.each { |a| error_log "  #{a}" }
+	}
+end
+exit_if_error
 
 
 
@@ -511,7 +549,6 @@ end
 ##
 ## deploy, otherwise ##
 ##
-
 
 
 # create a list of files for each bundle.image to deploy
@@ -585,7 +622,7 @@ deploy_bundles.each_pair { |name, bundle_meta|
 # copy the discovered files
 
 # copy each image to it's unique folder
-counter = 0
+file_counter = 0
 deploy_bundles.each_pair { |n, m|
 
 	bundle_deploy_path = m[:deploy_path]
@@ -609,16 +646,33 @@ deploy_bundles.each_pair { |n, m|
 				FileUtils.cp source_file, dest_file
 				
 				puts "deployed '#{source_file}' to '#{dest_file}'" if verbose
-				counter += 1
+				file_counter += 1
 			}
 		}
 	}
+
+	if m[:assets].length > 0
+		m[:assets][:dirs].each_pair { |source, meta| 
+			destination = meta[:destination]
+			dest_path   = File.join bundle_deploy_path, destination
+			FileUtils.cp_r source, dest_path
+		}
+		m[:assets][:files].each_pair { |source, meta| 
+			destination     = meta[:destination]
+			relative_path   = meta[:relative_path]
+			destination_dir = File.join bundle_deploy_path, relative_path
+			FileUtils.mkpath destination_dir
+			dest_path = File.join bundle_deploy_path, destination
+			FileUtils.cp source, dest_path
+		}
+	end
 }
 
 # generate meta files the describe the bundles
 deploy_bundles.each_pair { |bundle_name, bundle_meta|
 	
 	# map all the images to targets
+	deployed_assets   = []
 	targets_image_map = {}
 	parsed_targets_repo.each_pair { |t, v| targets_image_map[t] = {} }
 	# targets_image_map = { "*" => {} } if targets_image_map.length == 0
@@ -646,6 +700,10 @@ deploy_bundles.each_pair { |bundle_name, bundle_meta|
 			image_dmeta[iname] = files_dmeta
 		}
 	}
+	if bundle_meta[:assets].length > 0
+		bundle_meta[:assets][:dirs].each_pair { |source, meta|  deployed_assets.push meta[:destination] }
+		bundle_meta[:assets][:files].each_pair { |source, meta| deployed_assets.push meta[:destination] }
+	end
 
 	final_targets_image_map = {}
 	targets_image_map.each_pair { |t,m|
@@ -653,13 +711,13 @@ deploy_bundles.each_pair { |bundle_name, bundle_meta|
 		final_targets_image_map[t] = m
 	}
 
-	deployed_bundle_meta = { "name" => bundle_name, "version" => bundle_meta[:version], "targets" => final_targets_image_map }
+	deployed_bundle_meta = { "name" => bundle_name, "version" => bundle_meta[:version], "assets" => deployed_assets, "targets" => final_targets_image_map }
 
 	file_name = File.join bundle_meta[:deploy_path], "bundle.yaml"
 	create_file file_name, deployed_bundle_meta.to_yaml
 }
 
 summary = "deployed #{deploy_bundles.length} bundle#{deploy_bundles.length > 1 ? '' : 's'}."
-summary = "\n" + summary + ". involving #{counter} file#{counter > 1 ? '' : 's'}." if verbose
+summary = "\n" + summary + ". involving #{file_counter} file#{file_counter > 1 ? '' : 's'}." if verbose
 
 puts summary

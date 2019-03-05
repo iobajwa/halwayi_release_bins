@@ -54,7 +54,7 @@ Please refer to Halwayi's license agreement for more details
   </Target>
 
   <Target Name="NativePreprocessLinkerFile" DependsOnTargets="NativePLFVerifyInputs">
-    <Exec Command="&quot;$(PreprocessorExec)&quot; -E -P &quot;$(InputLinkerFile)&quot; $(ArgDirectives) -o &quot;$(OutputLinkerFile)&quot;"
+    <Exec Command="&quot;$(PreprocessorExec)&quot; -E -P &quot;$(InputLinkerFile)&quot; $(ArgDirectives) $(ArgPaths) -o &quot;$(OutputLinkerFile)&quot;"
       IgnoreStandardErrorWarningFormat="true" CustomErrorRegularExpression="^(?!\s*$).+" />
   </Target>
 

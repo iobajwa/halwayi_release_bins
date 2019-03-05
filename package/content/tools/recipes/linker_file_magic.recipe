@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!-- 
+  ************************************************************************************************************************
+                                             Linker File Magic recipe
+                                              
+    Provides a simplified interface to preprocess linker files.
+    
+    Simply point the InputLinkerFile to the linker file and set DoLinkerFileMagic to 'true' and use the 
+    '$(BuildMagicRoot)/<file-name>' in NativeLinkerArgs.
+    
+    Simple. :D
+  ************************************************************************************************************************
+  -->
+
+
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+
+  <!-- verifies input/output variables for preprocessing the linker script file -->
+  <Target Name="____LFMVerifyInput" Condition=" '$(DoLinkerFileMagic)' == 'true' ">
+    <Error Text="Input Linker File not found ('$(InputLinkerFile)')" Condition=" !Exists('$(InputLinkerFile)') "/>
+    <Error Text="Output Linker File not specified" Condition=" '$(OutputLinkerFile)' == '' "/>
+  </Target>
+
+
+  <!-- preprocesses linker script -->
+  <Target Name= "____LFMExecute" AfterTargets="_AfterSetup" DependsOnTargets="____LFMVerifyInput;NativePreprocessLinkerFile"
+    Inputs="$(InputLinkerFile)" Outputs="$(OutputLinkerFile)" Condition=" '$(DoLinkerFileMagic)' == 'true' ">
+  </Target>
+
+
+</Project>

@@ -47,4 +47,15 @@ Please refer to Halwayi's license agreement for more details
   </Target>
 
 
+  <Target Name="NativeTargetsSetup">
+    <PropertyGroup>
+      <PreprocessorExec>$(ToolChainPath)\arm-atollic-eabi-cpp.exe</PreprocessorExec>
+    </PropertyGroup>
+  </Target>
+
+  <Target Name="NativePreprocessLinkerFile" DependsOnTargets="NativePLFVerifyInputs">
+    <Exec Command="&quot;$(PreprocessorExec)&quot; -E -P &quot;$(InputLinkerFile)&quot; $(ArgDirectives) -o &quot;$(OutputLinkerFile)&quot;"
+      IgnoreStandardErrorWarningFormat="true" CustomErrorRegularExpression="^(?!\s*$).+" />
+  </Target>
+
 </Project>

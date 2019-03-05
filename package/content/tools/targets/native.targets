@@ -17,7 +17,9 @@ Please refer to Halwayi's license agreement for more details
   ************************************************************************************************************************
   -->
 
-  <Target Name="NativeInfo">
+  <Target Name="NativeTargetsSetup" />
+
+  <Target Name="NativeInfo" DependsOnTargets="NativeTargetsSetup">
     <!-- 
           There is a possibility that Native Include Paths might change (esp. in features).
           So, re-create the paths items.
@@ -43,8 +45,16 @@ Please refer to Halwayi's license agreement for more details
   </Target>
 
   <Target Name="NativeIdeBuild" Condition="'$(BuildIDE)' == 'true'">
-    <Error Text="Building IDE project for '$(_NativeToolChain)' tool chain are not supported as of now." />
+    <Error Text="Building IDE project for '$(_NativeToolChain)' tool chain is not supported as of now." />
   </Target>
 
+
+  <Target Name="NativePLFVerifyInputs">
+      <Error Text="Preprocessor executable not found '$(PreprocessorExec)'" Condition=" !Exists('$(PreprocessorExec)') " />
+  </Target>
+
+  <Target Name="NativePreprocessLinkerFile" DependsOnTargets="NativePLFVerifyInputs">
+    <Error Text="Preprocessing Linker File for '$(_NativeToolChain)' tool chain is not supported as of now."/>
+  </Target>
 
 </Project>

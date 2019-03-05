@@ -141,7 +141,11 @@ IF ["%CPU%"]==[""] (
 )
 set variant_platform=%var%+%platform_to_flash%
 set exec_path="%BinRoot%\features\%FeatureName%\%image_type%\%variant_platform%\%project_name%.exe"
-set native_exec_path="%BinRoot%\features\%FeatureName%\%image_type%\%variant_platform%\%project_name%.hex"
+IF ["%NativeExecName%"]==[""] (
+	set native_exec_path="%BinRoot%\features\%FeatureName%\%image_type%\%variant_platform%\%project_name%.hex"
+) else (
+	set native_exec_path="%BinRoot%\features\%FeatureName%\%image_type%\%variant_platform%\%NativeExecName%"
+)
 set mdb_script="%ArtifactsRoot%\etc\%FeatureName%_%variant_platform%_%image_type%_pk3_mdb.txt"
 set jlink_script="%ArtifactsRoot%\etc\%FeatureName%_%variant_platform%_%image_type%_jlink.txt"
 
@@ -188,11 +192,11 @@ if [%native%] NEQ [] (
 	) else IF "%FlashTool%"=="nsprog" (
 		echo .
 		echo flashing using nsprog - %native_exec_path%
-		call nsprog.exe p -d %CPU% -i %native_exec_path%
+		call nsprog.exe p %FlashToolExtraProgrammingArgs% -d %CPU% -i %native_exec_path% %FlashToolExtraArgs%
 	) else IF "%FlashTool%"=="stlink" (
 		IF exist "%stlinkPath%" (
 			echo flashing using stlink - %FlashToolInterface% - %native_exec_path%
-			call "%stlinkPath%" -c %FlashToolInterface% -p %native_exec_path% -v -Rst
+			call "%stlinkPath%" -c %FlashToolInterface% -p %native_exec_path% %FlashToolExtraProgrammingArgs% -v -Rst %FlashToolExtraArgs%
 
 			if errorlevel 1 (
 				echo ERROR: Failed to program platform

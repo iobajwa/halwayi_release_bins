@@ -161,6 +161,26 @@ class Node
 		return result.chomp
 	end
 end
+class Array
+	def glob_include? input, array_has_globs=false
+		if array_has_globs
+			self.each { |glob| return true if File.fnmatch(glob, input) }
+		else
+			glob = input
+			self.each { |i| return true if File.fnmatch(glob, i) }
+		end
+		return false
+	end
+	def include? glob
+		self.each { |i| return true if File.fnmatch(glob, i) }
+		return false
+	end
+	def match_glob glob
+		results = []
+		self.each { |i| results.push i if File.fnmatch(glob, i) }
+		return results
+	end
+end
 
 
 # 
@@ -180,8 +200,10 @@ def parse_arg_list args, index
 	return args_parsed
 end
 # requested_actions = {}
-targets_filtered  = []
-features_filtered = []
+targets_accept_filter  = []
+targets_ignore_filter  = []
+features_accept_filter = []
+features_ignore_filter = []
 output_path       = nil
 report_file       = nil
 verbose           = false
@@ -209,11 +231,19 @@ ARGV.each_with_index { |e, i|
 	when "features", "f", "feature"
 		features_parsed = parse_arg_list ARGV, i + 1
 		skip += features_parsed.length
-		features_filtered.push features_parsed
+		features_accept_filter.push features_parsed
+	when "ignore_features", "i", "ignore_feature"
+		features_parsed = parse_arg_list ARGV, i + 1
+		skip += features_parsed.length
+		features_ignore_filter.push features_parsed
 	when "targets", "t", "target"
 		targets_parsed = parse_arg_list ARGV, i + 1
 		skip += targets_parsed.length
-		targets_filtered.push targets_parsed
+		targets_accept_filter.push targets_parsed
+	when "ignore_targets", "T", "ignore_target"
+		targets_parsed = parse_arg_list ARGV, i + 1
+		skip += targets_parsed.length
+		targets_ignore_filter.push targets_parsed
 	when "verbose", "v"
 		verbose = true
 	when "?", "h", "help"
@@ -223,8 +253,10 @@ ARGV.each_with_index { |e, i|
 		error "'#{e}' ?"
 	end
 }
-features_filtered.flatten!
-targets_filtered.flatten!
+features_accept_filter.flatten!
+features_ignore_filter.flatten!
+targets_accept_filter.flatten!
+targets_ignore_filter.flatten!
 
 ## discover the environment ##
 project_root   = ENV['ProjectRoot']
@@ -265,7 +297,7 @@ puts "complete target list is #{target_list} (#{target_list.length})"
 total_feature_count   = 0
 targets_features_list = {}
 target_list.each { |tname|
-	next if targets_filtered.length > 0 && !targets_filtered.include?(tname)
+	next if (targets_accept_filter.length > 0 && !targets_accept_filter.glob_include?(tname, true)) || (targets_ignore_filter.glob_include?(tname, true))
 	raw_output        = `set target=#{tname} && list features`
 	features_to_build = []
 	lines             = string_to_lines raw_output
@@ -284,7 +316,7 @@ target_list.each { |tname|
 		next if l == ""
 		name = File.basename l
 		next if name.start_with? '_' or name.end_with? '_'
-		next if features_filtered.length > 0 && !features_filtered.include?(l)
+		next if (features_accept_filter.length > 0 && !features_accept_filter.include?(l)) || (features_ignore_filter.glob_include?(l, true))
 		features_to_build.push l
 	}
 	error "#{tname}: no feature to build"                                if features_to_build.length == 0

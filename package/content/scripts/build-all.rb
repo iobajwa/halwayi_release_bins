@@ -316,7 +316,7 @@ target_list.each { |tname|
 		next if l == ""
 		name = File.basename l
 		next if name.start_with? '_' or name.end_with? '_'
-		next if (features_accept_filter.length > 0 && !features_accept_filter.include?(l)) || (features_ignore_filter.glob_include?(l, true))
+		next if (features_accept_filter.length > 0 && !features_accept_filter.glob_include?(l, true)) || (features_ignore_filter.glob_include?(l, true))
 		features_to_build.push l
 	}
 	error "#{tname}: no feature to build"                                if features_to_build.length == 0

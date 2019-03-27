@@ -1,6 +1,8 @@
 
 require 'yaml'
 require 'fileutils'
+require_relative 'halwayi'
+require_relative 'helpers'
 
 STDOUT.sync = true
 
@@ -38,33 +40,12 @@ A simple utility to deploy bundles. 'bundles' are halwayi's way of looking at de
                       aliases: -h, ?, -?, --?
 "
 
-class Symbol def with(*args, &block) ->(caller, *rest) { caller.send(self, *rest, *args, &block) } end end
-class ::Hash def deep_merge(second) merger = proc { |key, v1, v2| Hash === v1 && Hash === v2 ? v1.merge(v2, &merger) : v2 }; self.merge(second, &merger); end end
-class String 
-	def rchomp(sep=$/) self.start_with?(sep) ? self[sep.size..-1] : self end
-	def lrchomp(sep)   rchomp(sep).chomp(sep) end
-end
-def error_log(msg) STDERR.puts(msg); $encountered_error=true end
-def exit_if_error() exit(-1) if $encountered_error; end
-def error(msg,error_code=-1) error_log(msg); exit(error_code); end
 def gen_batch_file_prefix(task) return task.gsub(' ', '-'); end
 def parse_array_from_string(str) return str.split(' ').map(&:chomp.with(',')); end
-def parse_variant_platform(str) return str.split('+').map(&:strip); end
-def create_file(name, contents) f = File.new(name, "w"); f.puts(contents);f.close(); end
 def sanitize_sting_meta(meta, default_value=nil) return meta == nil ? default_value : meta; end
 def sanitize_array_meta meta
 	return parse_array_from_string meta if meta.class == String
 	return meta
-end
-def get_dirs path
-	dirs = []
-	Dir.entries(path).each{ |e|
-		next if e == "." || e == ".."
-		e = File.join path, e
-		next unless File.directory? e
-		dirs.push e
-	}
-	dirs.push path
 end
 def create_shell_script task, bundle_name, bundle_meta, temp_script_root, batch_file_prefix=nil
 	batch_file_contents = []
@@ -110,23 +91,6 @@ def delete_shell_script task, bundle_name, temp_script_root, batch_file_prefix=n
 		return f
 	end
 	return nil
-end
-def parse_target_meta
-	meta = {}
-	targets_raw = `list targets`.split("\n")
-	targets_raw.each { |line|
-		if line.strip =~ /\s*\b(.*)\b\s*\((.*)\)\s*/
-			target_name = $~[1]
-			variant_platform_config = $~[2]
-			meta[target_name] = variant_platform_config
-			# if variant_platform_config
-			# 	variant, platform = variant_platform_config.split '+'
-			# 	platform = platform[0] if platform.class == Array
-			# end
-		end
-	}
-
-	return meta
 end
 def parse_source_destination raw
 	if raw =~ /\s*(.*?)\s*>\s*(.*)\s*/
@@ -180,41 +144,27 @@ ARGV.each_with_index { |e, i|
 }
 
 ## discover the environment ##
-project_root     = ENV['ProjectRoot']
-bin_root         = ENV['BinRoot']
-temp_script_root = ENV['BuildMagicRoot']
-artifacts_root   = ENV['ArtifactsRoot']
-magic_root       = ENV['MagicRoot']
 # sanity check
-error "ProjectRoot not defined."    unless project_root
-error "BinRoot not defined."        unless bin_root
-error "BuildMagicRoot not defined." unless temp_script_root
-error "ArtifactsRoot not defined."  unless artifacts_root
-deploy_file = File.join magic_root, "bundles.yaml"
+temp_script_root = build_magic_root
+deploy_file      = File.join magic_root, "bundles.yaml"
 unless deploy_path
 	puts "no deploy path provided, using default" if verbose
-	deploy_path = File.join artifacts_root, "bundles"
+	deploy_path = File.join art_root, "bundles"
 	# create the root bundles directory unless it exists
 	FileUtils.mkdir_p deploy_path unless Dir.exists? deploy_path
 end
 # ensure the paths exist
 error "path doesn't exist: '#{deploy_path}'"                    unless Dir.exist?  deploy_path
-error "temp script folder doesn't exist: '#{temp_script_root}'" unless Dir.exist?  temp_script_root
 error "bundles.yaml not found in MagicRoot ('#{magic_root}')."  unless File.exist? deploy_file
 # sanitize
-project_root     = project_root.gsub('\\', '/')
-bin_root         = bin_root.gsub('\\', '/')
-temp_script_root = temp_script_root.gsub('\\', '/')
-artifacts_root   = artifacts_root.gsub('\\', '/')
-magic_root       = magic_root.gsub('\\', '/')
-deploy_path      = deploy_path.gsub('\\', '/')
+deploy_path = deploy_path.gsub('\\', '/')
 
 
 if verbose
 	puts "deploy path    : #{deploy_path}"
 	puts "project root   : #{project_root}"
 	puts "bin root       : #{bin_root}"
-	puts "artifacts root : #{artifacts_root}"
+	puts "artifacts root : #{art_root}"
 	puts "magic root     : #{magic_root}"
 	puts "deploy path    : #{deploy_path}"
 end
@@ -241,7 +191,7 @@ global_targets    = [] unless global_targets
 global_vp_configs = [] unless global_vp_configs
 global_formats = [".hex"] if global_formats == nil or global_formats.length == 0
 deploy_bundles = {}
-parsed_targets_repo = parse_target_meta
+parsed_targets_repo = targets
 global_variants.each{ |v| global_platforms.each{ |pl| global_vp_configs.push "#{v}+#{pl}" } if global_platforms } if global_variants
 
 user_meta.each_pair { |bundle_name, bundle_meta|
@@ -319,7 +269,7 @@ user_meta.each_pair { |bundle_name, bundle_meta|
 						variants = []
 						platforms = []
 						i_vp_configs.each { |vp|
-							variant, platform = parse_variant_platform vp
+							variant, platform = Halwayi.parse_variant_platform vp
 							variants.push variant
 							platforms.push platform
 						}
@@ -365,7 +315,7 @@ user_meta.each_pair { |bundle_name, bundle_meta|
 		targets_parsed = {}
 		bmeta[:targets].each { |t|
 			begin
-				target_vp_config = parsed_targets_repo[t]
+				target_vp_config = parsed_targets_repo[t][:vp_config]
 				if target_vp_config 
 					vp_configs.push target_vp_config unless vp_configs.include? target_vp_config
 					targets_parsed[t] = target_vp_config
@@ -668,7 +618,7 @@ deploy_bundles.each_pair { |n, m|
 	end
 }
 
-# generate meta files the describe the bundles
+# generate meta files that describe the bundles
 deploy_bundles.each_pair { |bundle_name, bundle_meta|
 	
 	# map all the images to targets

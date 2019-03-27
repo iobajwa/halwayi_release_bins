@@ -83,6 +83,7 @@ Please refer to Halwayi's license agreement for more details
 	<Import Project= "$(ProjectFile)" />
 	<Import Project= "$(TargetsToolPath)\native.targets" Condition= " '$(BuildNativeAsWell)' == 'true' "/>
 	<Import Project= "$(TargetsToolPath)\$(_NativeToolChain).targets" Condition= " '$(BuildNativeAsWell)' == 'true' "/>
+	<Import Project= "$(MSBuildThisFileDirectory)\..\recipes\versionator.recipe"/>
 
 	<UsingTask AssemblyFile= "$(BuilderTasksPath)\halwayiTasks.dll" TaskName= "RelativeToAbsolutePathsTask" />
 	<UsingTask AssemblyFile= "$(BuilderTasksPath)\halwayiTasks.dll" TaskName= "LinkFileCreationTask" />

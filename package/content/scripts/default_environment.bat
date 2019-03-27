@@ -10,24 +10,27 @@ set FlashToolInterface=SWD
 
 	rem settings related to project structure
 set ProjectRoot=%CD%\..
-set DocsRoot=%ProjectRoot%\docs
-set ToolsRoot=%ProjectRoot%\tools
+set ArtifactsRoot=%ProjectRoot%\artifacts
+set BinRoot=%ProjectRoot%\bin
+set PackagesRoot=%ArtifactsRoot%\packages
+set BuildMagicRoot=%ArtifactsRoot%\scripts
+set ToolsRoot=%PackagesRoot%
 set HalwayiToolsRoot=%ToolsRoot%\halwayi
-set ScriptsRoot=%ProjectRoot%\scripts
+set HalwayiMagicRoot=%ToolsRoot%\halwayi\scripts
+set CodeRoot=%ProjectRoot%\code
+set SourceRoot=%CodeRoot%\source
 set MagicRoot=%ScriptsRoot%
 set TargetsRoot=%MagicRoot%\targets
-set CodeRoot=%ProjectRoot%\code
-set CodeLibRoot=%CodeRoot%\lib
-set BinRoot=%ProjectRoot%\bin
-set ArtifactsRoot=%ProjectRoot%\artifacts
 set RecipesRoot=%ScriptsRoot%\recipes
 set FeaturesRoot=%ProjectRoot%\features
-set ProjectFile=%ProjectRoot%\project.properties
-set BuildMagicRoot=%ArtifactsRoot%\scripts
-set FeatureSourceName=main.c
 set FeatureCodeRoot=%CodeRoot%\features
-set TestReportName=results.xml
+set ProjectFile=%ProjectRoot%\project.properties
 set CTypesFile=boski.h
+set DocsRoot=%ProjectRoot%\docs
+set ScriptsRoot=%ProjectRoot%\scripts
+set CodeLibRoot=%CodeRoot%\lib
+set FeatureSourceName=main.c
+set TestReportName=results.xml
 
 
 	rem default paths for flash tools
@@ -36,7 +39,7 @@ IF exist "C:\Program Files\Microchip\MPLABX\mplab_ide\bin\mdb.bat" (
 ) else IF exist "C:\Program Files (x86)\Microchip\MPLABX\mplab_ide\bin\mdb.bat" (
 	set "mdbPath=C:\Program Files (x86)\Microchip\MPLABX\mplab_ide\bin\mdb.bat" 
 ) else (
-	set mdbPath="x:\"
+	set mdbPath="c:\dummy-nonexistant-path"
 )
 
 if exist "C:\Program Files (x86)\SEGGER\JLink_V630h\JLink.exe" (
@@ -44,7 +47,7 @@ if exist "C:\Program Files (x86)\SEGGER\JLink_V630h\JLink.exe" (
 ) else IF exist "C:\Program Files\SEGGER\JLink_V630h\JLink.exe" (
 	set "jlinkPath="C:\Program Files\SEGGER\JLink_V630h\JLink.exe""
 ) else (
-	set jlinkPath="x:\"
+	set jlinkPath="c:\dummy-nonexistant-path"
 )
 
 if exist "C:\Program Files (x86)\STMicroelectronics\STM32 ST-LINK Utility\ST-LINK Utility\ST-LINK_CLI.exe" (
@@ -52,5 +55,5 @@ if exist "C:\Program Files (x86)\STMicroelectronics\STM32 ST-LINK Utility\ST-LIN
 ) else IF exist "C:\Program Files\STMicroelectronics\STM32 ST-LINK Utility\ST-LINK Utility\ST-LINK_CLI.exe" (
 	set "stlinkPath=C:\Program Files\STMicroelectronics\STM32 ST-LINK Utility\ST-LINK Utility\ST-LINK_CLI.exe"
 ) else (
-	set stlinkPath="x:\"
+	set stlinkPath="c:\dummy-nonexistant-path"
 )

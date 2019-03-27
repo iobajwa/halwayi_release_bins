@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!-- 
+  ************************************************************************************************************************
+                                                Versionator recipe
+                                              
+    Invokes the versionator tool to generate fwversion module. 
+    
+    Simply set the VersionatorEnabled env variable to 'true'
+  ************************************************************************************************************************
+  -->
+
+
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+
+  <!-- verifies input/output variables for preprocessing the linker script file -->
+  <Target Name="____VersionatorGenerator" Condition=" '$(VersionatorEnabled)' == 'true' " AfterTargets="_AfterFindingSourceFiles">
+    <Exec Command="ruby &quot;$(HalwayiMagicRoot)\versionator.rb&quot; generate-sources"
+      IgnoreStandardErrorWarningFormat="true" CustomErrorRegularExpression="^(?!\s*$).+" />
+  </Target>
+
+</Project>

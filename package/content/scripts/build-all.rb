@@ -2,6 +2,8 @@ require "timeout"
 require "socket"
 require "date"
 require 'fileutils'
+require_relative 'halwayi'
+require_relative 'helpers'
 
 STDOUT.sync = true
 
@@ -18,9 +20,17 @@ Builds all targets if none are specified.
                       aliases: --target, -t
                       default: <all-targets>
 
+    --ignore_targets : ignores the specified target(s)
+                      aliases: --ignore_target, -T
+                      default: <none>
+
     --features      : builds only the specified features
                       aliases: --feature, -f
                       default: <all-features>
+
+    --ignore_features : ignores the specified feature(s)
+                      aliases: --ignore_feature, -i
+                      default: <none>
 
     --timeout       : for each build (in seconds)
                       default: 40
@@ -45,13 +55,8 @@ Builds all targets if none are specified.
 #                   aliases: -l, --ld
 
 
-def string_to_lines(raw) raw.gsub("\r\n","\n").split("\n").map(&:strip) end
-def error_log(msg) STDERR.puts(msg); $encountered_error=true end
-def exit_if_error() exit(-1) if $encountered_error; end
-def error(msg,error_code=-1) error_log(msg); exit(error_code); end
-	class ToolException < Exception
+class ToolException < Exception
 end
-def create_file(name, contents) f = File.new(name, "w"); f.puts(contents);f.close(); end
 class Tree
 	attr_accessor :name, :delimiter, :nodes
 	def initialize name='tree', delimiter='/'
@@ -258,45 +263,39 @@ features_ignore_filter.flatten!
 targets_accept_filter.flatten!
 targets_ignore_filter.flatten!
 
-## discover the environment ##
-project_root   = ENV['ProjectRoot']
-artifacts_root = ENV['ArtifactsRoot']
+
 # sanity check
-error "ArtifactsRoot undefined" unless artifacts_root
-error "ProjectRoot undefined"   unless project_root
-report_file = File.join artifacts_root, "build-all-results.xml" unless report_file
+report_file = File.join art_root, "build-all-results.xml" unless report_file
 error "Invalid value specified for timeout ('#{build_timeout}')."  unless build_timeout.class == Fixnum and build_timeout > 0
 unless output_path
 	puts "no output path provided, using default" if verbose
-	output_path = File.join artifacts_root, "etc"
-	# create the root output directory unless it exists
+	output_path = etc_root
 	FileUtils.mkdir_p output_path unless Dir.exists? output_path
 end
 # ensure the paths exist
 error "path doesn't exist: '#{output_path}'" unless Dir.exist? output_path
 File.delete report_file if File.exist? report_file
 # sanitize
-project_root   = project_root.gsub('\\', '/')
-artifacts_root = artifacts_root.gsub('\\', '/')
-output_path    = output_path.gsub('\\', '/')
+output_path = output_path.gsub('\\', '/')
 # print the environment
 puts "project root       : #{project_root}"
-puts "artifacts root     : #{artifacts_root}"
+puts "artifacts root     : #{art_root}"
 puts "output path        : #{output_path}"
 puts "output report path : #{report_file}"
 
 
 
 # get a list of all targets
-target_list  = string_to_lines `list target_names`
-project_name = string_to_lines(`list project_name`)[0]
-
 puts ""
-puts "complete target list is #{target_list} (#{target_list.length})"
+puts "complete target list is #{target_names} (#{target_names.length})"
+puts "target acceptance filter list is #{targets_accept_filter} (#{targets_accept_filter.length})"    if targets_accept_filter.length  > 0
+puts "target ignore filter list is #{targets_ignore_filter} (#{targets_ignore_filter.length})"        if targets_ignore_filter.length  > 0
+puts "feature acceptance filter list is #{features_accept_filter} (#{features_accept_filter.length})" if features_accept_filter.length > 0
+puts "feature ignore filter list is #{features_ignore_filter} (#{features_ignore_filter.length})"     if features_ignore_filter.length > 0
 # get a list of features specific to each target
 total_feature_count   = 0
 targets_features_list = {}
-target_list.each { |tname|
+target_names.each { |tname|
 	next if (targets_accept_filter.length > 0 && !targets_accept_filter.glob_include?(tname, true)) || (targets_ignore_filter.glob_include?(tname, true))
 	raw_output        = `set target=#{tname} && list features`
 	features_to_build = []

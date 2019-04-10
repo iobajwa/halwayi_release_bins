@@ -62,8 +62,8 @@ header_file_contents = "/* AUTO GENERATED. DO NOT EDIT */
 #define FW_VERSION_BUFFER_LENGTH    (FW_VERSION_STRING_LENGTH + 1)
 
 
-void  fwversion_get     ( u8 *buffer, u8 max_buffer_length );	// assumes buffer is large enough
-Char* fwversion_get_ref ( void );
+void        fwversion_get     ( u8 *buffer, u8 max_buffer_length );	// assumes buffer is large enough
+const Char* fwversion_get_ref ( void );
 
 
 
@@ -83,7 +83,7 @@ void fwversion_get( u8 *buffer, u8 max_buffer_length )
 	memcpy( buffer, (void*)fw_string, FW_VERSION_STRING_LENGTH + 1 );
 }
 
-Char* fwversion_get_ref( void )
+const Char* fwversion_get_ref( void )
 {
 	return fw_string;
 }

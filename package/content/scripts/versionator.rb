@@ -34,11 +34,22 @@ version_lock_file = File.join etc_root, "fwversion.lock"
 old_version = try_read_file(version_lock_file)
 old_version = old_version[0] if old_version
 old_version.strip!           if old_version
+
+unless generate_sources
+	if fw_version == old_version
+		puts "", fw_version
+		exit
+	end
+	puts ""
+	puts "last build : #{old_version}"
+	puts "next build : #{fw_version}"
+	exit
+end
+
 exit if fw_version == old_version
 create_file version_lock_file, fw_version
 
-if generate_sources
-	header_file_contents = "/* AUTO GENERATED. DO NOT EDIT */
+header_file_contents = "/* AUTO GENERATED. DO NOT EDIT */
 
 #ifndef __FW_VERSION_H__
 #define __FW_VERSION_H__
@@ -59,12 +70,12 @@ Char* fwversion_get_ref ( void );
 #endif // __FW_VERSION_H__
 "
 
-	source_file_contents = "/* AUTO GENERATED. DO NOT EDIT */
+source_file_contents = "/* AUTO GENERATED. DO NOT EDIT */
 
 #include <fwversion.h>
 #include <string.h>
 
-static Char* fw_string = \"#{fw_version}\";
+static const Char* fw_string = \"#{fw_version}\";
 
 
 void fwversion_get( u8 *buffer, u8 max_buffer_length )
@@ -78,14 +89,11 @@ Char* fwversion_get_ref( void )
 }
 "
 
-	source_root = auto_code_root
-	error "could not determine the auto source_root" unless auto_code_root
+source_root = auto_code_root
+error "could not determine the auto source_root" unless auto_code_root
 
-	header_file = File.join source_root, "fwversion.h"
-	source_file = File.join source_root, "fwversion.c"
+header_file = File.join source_root, "fwversion.h"
+source_file = File.join source_root, "fwversion.c"
 
-	create_file header_file, header_file_contents
-	create_file source_file, source_file_contents
-else
-	puts fw_version
-end
+create_file header_file, header_file_contents
+create_file source_file, source_file_contents

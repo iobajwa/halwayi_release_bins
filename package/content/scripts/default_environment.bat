@@ -25,6 +25,7 @@ set RecipesRoot=%ScriptsRoot%\recipes
 set FeaturesRoot=%ProjectRoot%\features
 set FeatureCodeRoot=%CodeRoot%\features
 set ProjectFile=%ProjectRoot%\project.properties
+set EtcRoot=%ArtifactsRoot%\etc
 set CTypesFile=boski.h
 set DocsRoot=%ProjectRoot%\docs
 set ScriptsRoot=%ProjectRoot%\scripts

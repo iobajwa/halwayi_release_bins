@@ -46,8 +46,7 @@ unless generate_sources
 	exit
 end
 
-exit if fw_version == old_version
-create_file version_lock_file, fw_version
+create_file version_lock_file, fw_version unless fw_version == old_version
 
 header_file_contents = "/* AUTO GENERATED. DO NOT EDIT */
 
@@ -94,6 +93,8 @@ error "could not determine the auto source_root" unless auto_code_root
 
 header_file = File.join source_root, "fwversion.h"
 source_file = File.join source_root, "fwversion.c"
+
+exit if File.exist?(header_file) and File.exist?(source_file) and fw_version == old_version
 
 create_file header_file, header_file_contents
 create_file source_file, source_file_contents

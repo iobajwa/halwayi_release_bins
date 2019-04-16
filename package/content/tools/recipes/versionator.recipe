@@ -14,7 +14,7 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
 
   <!-- verifies input/output variables for preprocessing the linker script file -->
-  <Target Name="____VersionatorGenerator" Condition=" '$(VersionatorEnabled)' == 'true' " AfterTargets="_AfterFindingSourceFiles">
+  <Target Name="____VersionatorGenerator" Condition=" '$(VersionatorEnabled)' == 'true' " BeforeTargets="_BeforeFindingSourceFiles">
     <Exec Command="ruby &quot;$(HalwayiMagicRoot)\versionator.rb&quot; generate-sources"
       IgnoreStandardErrorWarningFormat="true" CustomErrorRegularExpression="^(?!\s*$).+" />
   </Target>

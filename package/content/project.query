@@ -65,6 +65,7 @@ Please refer to Halwayi's license agreement for more details
                       SourcePaths="$(CodeRoot)\source"
                       FeatureFileExtension="$(FeatureFileExtension)"
                       TargetsRoot="$(TargetsRoot)"
+                      TestFilePrefix="$(TestFilePrefix)"
                       Condition=" '$(Handeled)' != 'true' "/>
   </Target>
 

@@ -65,7 +65,7 @@ class Halwayi
 		return nil
 	end
 	def Halwayi.project_name
-		@project_name = `list project-name`.strip unless @project_name
+		@project_name = `list project.name`.strip unless @project_name
 		return @project_name
 	end
 	def Halwayi.targets

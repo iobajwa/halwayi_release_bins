@@ -80,7 +80,7 @@ echo Flashing '%FeatureName%' feature..
 
 	rem figure out the user supplied variant
 set variant_count=0
-FOR /F "tokens=*" %%F IN ('list variant_count') do SET variant_count=%%F
+FOR /F "tokens=*" %%F IN ('list variants.count') do SET variant_count=%%F
 if %variant_count% GTR 1 if ["%var%"]==[""] (
 	echo ERROR: Cannot flash multiple variants
 	goto ferr_exit
@@ -107,9 +107,9 @@ if ["%platform%"] NEQ [""] (
 ) else (
 	rem if user supplied none, get the platform available for the active variant,
 	rem provided there is only a single platform
-	FOR /F "tokens=*" %%F IN ('list first_platform var %var%') do SET platform_to_flash=%%F
+	FOR /F "tokens=*" %%F IN ('list platforms.first var %var%') do SET platform_to_flash=%%F
 	set first_line=1
-	FOR /F "tokens=*" %%F IN ('list platform_count') do (
+	FOR /F "tokens=*" %%F IN ('list platforms.count') do (
 		if !first_line!==1 set platform_count=%%F
 		set first_line=0
 	)
@@ -128,7 +128,7 @@ if %platform_count% GTR 1 (
 	rem figure out the native flash script details 
 	rem the project name..
 set project_name=
-FOR /F "tokens=*" %%F IN ('list project_name') do SET project_name=%%F
+FOR /F "tokens=*" %%F IN ('list project.name') do SET project_name=%%F
 if ["%project_name%"]==[""] (
 	echo ERROR: Project name could not be determined
 	goto ferr_exit

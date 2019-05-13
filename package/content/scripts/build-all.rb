@@ -315,7 +315,7 @@ targets_features_list.each_pair { |tname, feature_list|
 	tree              = Tree.populate tname, feature_list
 	unique_namespaces = Tree.get_all_unique_namespace_combinations feature_list
 	root_namespaces   = Tree.get_root_namespaces feature_list
-	targets[tname] = { :tname => tname, :tree => tree, :features => feature_list, :root_namespaces => root_namespaces, :unique_namespaces => unique_namespaces }
+	targets[tname] = { :tname => tname, :tree => tree, :features => feature_list, :root_namespaces => root_namespaces, :unique_namespaces => unique_namespaces, features_failed: [], features_timedout: [] }
 }
 
 puts ""
@@ -376,7 +376,7 @@ targets.each_pair { |tname, tmeta|
 		# build completed, capture report
 		output     = File.exist?(output_file) ? File.readlines(output_file) : []
 		build_time = Time.now - start_time
-		puts "    build #{build_result}" + (build_result == :passed ? "" : " (#{exit_code})") + (build_result != :timedout ? ", took #{build_time} seconds." : "") unless build_result == :timedout
+		puts "    build #{build_result}" + (build_result == :passed ? "" : " (#{exit_code})") + (build_result != :timedout ? ", took #{"%.3f" % build_time} seconds." : "") unless build_result == :timedout
 		etd_seconds = calculate_etd_seconds total_time + target_total_build_time + build_time, total_feature_count, total_build_count + target_total_build_count + 1
 		puts "    ETD #{etd_seconds=='unknown' ? '' : '~'}#{etd_seconds.round}#{ etd_seconds=='unknown' ? '.' : ' seconds.'}"
 		puts "    "
@@ -389,6 +389,9 @@ targets.each_pair { |tname, tmeta|
 		target_total_timedout_count += 1 if build_result == :timedout
 		target_total_build_count    += 1
 		target_total_build_time     += build_time
+
+		tmeta[:features_failed].push   feature_name if build_result == :failed
+		tmeta[:features_timedout].push feature_name if build_result == :timedout
 	}
 	
 	puts "  #{target_total_build_count} built, #{target_total_passed_count} succeeded."
@@ -407,6 +410,14 @@ targets.each_pair { |tname, tmeta|
 	total_timedout_count += target_total_timedout_count
 	total_build_count    += target_total_build_count
 	total_time           += target_total_build_time
+}
+
+targets.each_pair { |tname, tmeta|
+	if tmeta[:features_failed].length > 0 or tmeta[:features_timedout].length > 0
+		puts "", "#{tname}:"
+		tmeta[:features_failed].each   { |f| puts "  #{t}" }
+		tmeta[:features_timedout].each { |f| puts "  #{t} (TIMEDOUT)" }
+	end
 }
 
 # print summary

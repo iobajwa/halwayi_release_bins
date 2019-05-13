@@ -33,7 +33,9 @@ Please refer to Halwayi's license agreement for more details
 		<GhostToolname></GhostToolname>
 
 		<!-- Variant information -->
+		<_TargetName></_TargetName>
 		<_VariantName></_VariantName>
+		<_PlatformName></_PlatformName>
 		<_VariantSwitch></_VariantSwitch>
 		<NativeCPU></NativeCPU>
 		<ReleaseDefines></ReleaseDefines>
@@ -47,6 +49,7 @@ Please refer to Halwayi's license agreement for more details
 		<_NativeToolChain></_NativeToolChain>
 
 		<!-- Paths -->
+		<_FeatureFolders></_FeatureFolders>
 		<_GhostSourceFolders></_GhostSourceFolders>
 		<_NativeSourceFolders></_NativeSourceFolders>
 		<_SourceFolders></_SourceFolders>
@@ -56,7 +59,7 @@ Please refer to Halwayi's license agreement for more details
 		<_AllGhostIncludedPaths></_AllGhostIncludedPaths>
 
 		<ToolScriptsFolders></ToolScriptsFolders>
-		<AutoCodeRoot>$(ArtifactsFolderRoot)\auto\$(_VariantName)\code\source</AutoCodeRoot>
+		<AutoCodeRoot>$(ArtifactsFolderRoot)\auto\$(_TargetName)\code\source</AutoCodeRoot>
 		
 		<!-- Output -->
 		<TargetName></TargetName>
@@ -81,7 +84,7 @@ Please refer to Halwayi's license agreement for more details
 	-->
 	<Import Project= "$(DefaultPropertyFile)" />
 	<Import Project= "$(ProjectFile)" />
-	<Import Project= "$(TargetsToolPath)\native.targets" Condition= " '$(BuildNativeAsWell)' == 'true' "/>
+	<Import Project= "$(TargetsToolPath)\native.targets"              Condition= " '$(BuildNativeAsWell)' == 'true' "/>
 	<Import Project= "$(TargetsToolPath)\$(_NativeToolChain).targets" Condition= " '$(BuildNativeAsWell)' == 'true' "/>
 	<Import Project= "$(MSBuildThisFileDirectory)\..\recipes\versionator.recipe"/>
 
@@ -229,8 +232,8 @@ Please refer to Halwayi's license agreement for more details
   
   <Target Name="_SetupBinAndArtifactFolders">
   	<PropertyGroup>
-		<!-- <AutoCodeRoot>$(ArtifactsFolderRoot)\auto\$(_VariantName)\code\source</AutoCodeRoot> -->
-		<AutoToolScriptsRoot>$(ArtifactsFolderRoot)\auto\$(_VariantName)\tool_scripts\</AutoToolScriptsRoot>
+		<!-- <AutoCodeRoot>$(ArtifactsFolderRoot)\auto\$(_TargetName)\code\source</AutoCodeRoot> -->
+		<AutoToolScriptsRoot>$(ArtifactsFolderRoot)\auto\$(_TargetName)\tool_scripts\</AutoToolScriptsRoot>
 		<ArtifactsFolderRoot>$(ArtifactsFolderRoot)\features\$(FeatureName)\$(SelectedConfiguration)</ArtifactsFolderRoot>
 		<BinFolderRoot>$(BinFolderRoot)\features\$(FeatureName)\$(SelectedConfiguration)</BinFolderRoot>
     </PropertyGroup>
@@ -267,7 +270,7 @@ Please refer to Halwayi's license agreement for more details
 	</Target>
 	
 	<Target Name= "_SanityCheck_VariantProperties">
-		<Error Text= "_VariantName not provided" Condition= " '$([System.String]::IsNullOrWhiteSpace($(_VariantName)))' == 'true' "  />
+		<Error Text= "_TargetName not provided" Condition= " '$([System.String]::IsNullOrWhiteSpace($(_TargetName)))' == 'true' "  />
 		<Error Text= "_VariantSwitch not provided" Condition= " '$([System.String]::IsNullOrWhiteSpace($(_VariantSwitch)))' == 'true' " />
 
 		<Error Text="Artifacts root folder not specified" Condition=" $([System.String]::IsNullOrWhiteSpace($(ArtifactsFolderRoot))) "></Error>
@@ -298,7 +301,7 @@ Please refer to Halwayi's license agreement for more details
 		</ItemGroup>
 
 		<!-- Convert any relative paths to abosute paths -->
-		<RelativeToAbsolutePathsTask PathsToCheck= "@(NativeSourceFolders)" Root= "$(MSBuildStartupDirectory)">
+		<RelativeToAbsolutePathsTask PathsToCheck= "@(NativeSourceFolders)" Root= "$(ProjectRoot)">
 			<Output ItemName= "__Temp1" TaskParameter= "ConvertedPathsItem" />
 		</RelativeToAbsolutePathsTask>
 		<ItemGroup>
@@ -306,7 +309,7 @@ Please refer to Halwayi's license agreement for more details
 			<NativeSourceFolders Include="%(__Temp1.Identity)" />
 		</ItemGroup>
 
-		<RelativeToAbsolutePathsTask PathsToCheck= "@(GhostSourceFolders)" Root= "$(MSBuildStartupDirectory)">
+		<RelativeToAbsolutePathsTask PathsToCheck= "@(GhostSourceFolders)" Root= "$(ProjectRoot)">
 			<Output ItemName= "__Temp2" TaskParameter= "ConvertedPathsItem" />
 		</RelativeToAbsolutePathsTask>
 		<ItemGroup>
@@ -314,7 +317,7 @@ Please refer to Halwayi's license agreement for more details
 			<GhostSourceFolders Include="%(__Temp2.Identity)" />
 		</ItemGroup>
 		
-		<RelativeToAbsolutePathsTask PathsToCheck= "@(SourceFoldersItem)" Root= "$(MSBuildStartupDirectory)">
+		<RelativeToAbsolutePathsTask PathsToCheck= "@(SourceFoldersItem)" Root= "$(ProjectRoot)">
 			<Output ItemName= "__Temp3" TaskParameter= "ConvertedPathsItem" />
 		</RelativeToAbsolutePathsTask>
 		<ItemGroup>
@@ -322,7 +325,7 @@ Please refer to Halwayi's license agreement for more details
 			<SourceFoldersItem Include="%(__Temp3.Identity)" />
 		</ItemGroup>
 
-		<RelativeToAbsolutePathsTask PathsToCheck= "@(IncludeFoldersItem)" Root= "$(MSBuildStartupDirectory)">
+		<RelativeToAbsolutePathsTask PathsToCheck= "@(IncludeFoldersItem)" Root= "$(ProjectRoot)">
 			<Output ItemName= "__Temp4" TaskParameter= "ConvertedPathsItem" />
 		</RelativeToAbsolutePathsTask>
 		<ItemGroup>
@@ -360,7 +363,7 @@ Please refer to Halwayi's license agreement for more details
 
 	</Target>
 
-	<Target Name= "_CheckPaths" DependsOnTargets= "_CheckSourceFolders;_CheckIncludeFolders;_CheckGhostSourceFolders;_CheckNativeSourceFolders">
+	<Target Name= "_CheckPaths" DependsOnTargets= "_CheckSourceFolders;_CheckIncludeFolders;_CheckGhostSourceFolders;_CheckNativeSourceFolders;">
 	</Target>
 
 	<Target Name= "_CheckSourceFolders" Outputs= "%(SourceFoldersItem.Identity)" Condition= " '$(_SourceFolders)' != '' ">
@@ -376,7 +379,7 @@ Please refer to Halwayi's license agreement for more details
 	</Target>
 
 	<Target Name= "_CheckNativeSourceFolders" Outputs= "%(NativeSourceFoldersItem.Identity)" Condition= " '$(_NativeSourceFolders)' != '' ">
-		<Error Text= "Ghost Source Path '%(NativeSourceFoldersItem.Identity)' does not exists." Condition= "!Exists(%(NativeSourceFoldersItem.Identity)) AND $([System.String]::IsNullOrEmpty('%(NativeSourceFoldersItem.Identity)')) == 'false'" />
+		<Error Text= "Native Source Path '%(NativeSourceFoldersItem.Identity)' does not exists." Condition= "!Exists(%(NativeSourceFoldersItem.Identity)) AND $([System.String]::IsNullOrEmpty('%(NativeSourceFoldersItem.Identity)')) == 'false'" />
 	</Target>
 
 
@@ -411,11 +414,11 @@ Please refer to Halwayi's license agreement for more details
 			<_AllGhostIncludedPaths>$(_AllGhostIncludedPaths.Replace(";\;", ";"))</_AllGhostIncludedPaths>
 		</PropertyGroup>
 
-		<RelativeToAbsolutePathsTask PathsToCheck= "$(_AllNativeIncludedPaths)" Root= "$(MSBuildStartupDirectory)">
+		<RelativeToAbsolutePathsTask PathsToCheck= "$(_AllNativeIncludedPaths)" Root= "$(ProjectRoot)">
 			<Output PropertyName= "_AllNativeIncludedPaths" TaskParameter= "ConvertedPaths" />
 		</RelativeToAbsolutePathsTask>
 
-		<RelativeToAbsolutePathsTask PathsToCheck= "$(_AllGhostIncludedPaths)" Root= "$(MSBuildStartupDirectory)">
+		<RelativeToAbsolutePathsTask PathsToCheck= "$(_AllGhostIncludedPaths)" Root= "$(ProjectRoot)">
 			<Output PropertyName= "_AllGhostIncludedPaths" TaskParameter= "ConvertedPaths" />
 		</RelativeToAbsolutePathsTask>
 
@@ -490,7 +493,7 @@ Please refer to Halwayi's license agreement for more details
 	</Target>
 
 	<Target Name="_ParseEncodedDefines">
-		<FeatureBuildConfigValidatorTask FeatureCFile="$(FeatureCFile)" VariantPlatform="$(_VariantName)" FeatureName="$(FeatureName)" >
+		<FeatureBuildConfigValidatorTask FeatureCFile="$(FeatureCFile)" TargetName="$(_TargetName)" VariantName="$(_VariantName)" PlatformName="$(_PlatformName)" FeatureName="$(FeatureName)" >
 			<Output PropertyName= "_DefinesEncodedInFeature" TaskParameter= "ParsedDefines" />
 		</FeatureBuildConfigValidatorTask>
 		<PropertyGroup Condition=" '$(_DefinesEncodedInFeature)' != '' ">
@@ -534,9 +537,9 @@ Please refer to Halwayi's license agreement for more details
 
 	<Target Name= "_CreateVariantProperties">
 		<PropertyGroup>
-			<VariantArtificatFolderRoot>$(ArtifactsFolderRoot)\$(_VariantName)</VariantArtificatFolderRoot>
-			<VariantBinFolderRoot>$(BinFolderRoot)\$(_VariantName)</VariantBinFolderRoot>
-			<VariantIdeFolder>$(IdeFolderRoot)\$(_VariantName)</VariantIdeFolder>
+			<VariantArtificatFolderRoot>$(ArtifactsFolderRoot)\$(_TargetName)</VariantArtificatFolderRoot>
+			<VariantBinFolderRoot>$(BinFolderRoot)\$(_TargetName)</VariantBinFolderRoot>
+			<VariantIdeFolder>$(IdeFolderRoot)\$(_TargetName)</VariantIdeFolder>
 		</PropertyGroup>
 	</Target>
 

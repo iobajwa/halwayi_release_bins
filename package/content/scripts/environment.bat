@@ -18,6 +18,8 @@ set FeaturesRoot=%ProjectRoot%\features
 set ProjectFile=%ProjectRoot%\project.properties
 set GhostToolchain=gcc
 set TargetsRoot=%MagicRoot%\targets
+set EtcRoot=%ArtifactsRoot%\etc
+set HalwayiMagicRoot=%~dp0
 rem set GhostToolchain=vcc
 
 set FlashTool=jlink

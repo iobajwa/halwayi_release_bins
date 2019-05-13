@@ -15,7 +15,12 @@
 
   <!-- verifies input/output variables for preprocessing the linker script file -->
   <Target Name="____VersionatorGenerator" Condition=" '$(VersionatorEnabled)' == 'true' " BeforeTargets="_BeforeFindingSourceFiles">
-    <Exec Command="ruby &quot;$(HalwayiMagicRoot)\versionator.rb&quot; generate-sources"
+    <Exec Command="ruby &quot;$(HalwayiMagicRoot)\versionator.rb&quot; generate" EnvironmentVariables="target=$(_TargetName)"
+      IgnoreStandardErrorWarningFormat="true" CustomErrorRegularExpression="^(?!\s*$).+" />
+  </Target>
+
+  <Target Name="____VersionatorClean" Condition=" '$(VersionatorEnabled)' == 'true' " BeforeTargets="_BeforeClean">
+    <Exec Command="ruby &quot;$(HalwayiMagicRoot)\versionator.rb&quot; clean" EnvironmentVariables="target=$(_TargetName)"
       IgnoreStandardErrorWarningFormat="true" CustomErrorRegularExpression="^(?!\s*$).+" />
   </Target>
 

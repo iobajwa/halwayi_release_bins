@@ -15,8 +15,29 @@ require_relative "helpers"
 
 dev_name   = ENV['DEV_NAME']
 fw_version = ENV["FW_VERSION"]
+target     = ENV['target']
 
-generate_sources = ARGV.include? "generate-sources"
+unless target
+	puts "for which target?"
+	exit -1
+end
+
+generate_sources = ARGV.include? "generate"
+clean_sources    = ARGV.include? "clean"
+
+source_root = auto_code_root
+error "could not determine the auto source_root" unless auto_code_root
+
+header_file       = File.join source_root, "fwversion.h"
+source_file       = File.join source_root, "fwversion.c"
+version_lock_file = File.join etc_root,    "fwversion.lock"
+
+if clean_sources
+	File.delete header_file       if File.exist?(header_file)
+	File.delete source_file       if File.exist?(source_file)
+	File.delete version_lock_file if File.exist?(version_lock_file)
+	exit
+end
 
 unless fw_version
 	# create a version string
@@ -27,10 +48,9 @@ unless fw_version
 	fw_version    = "#{branch_name}/#{commit_number[0...7]}/#{dev_name}"
 end
 
-fw_version  = fw_version.to_s
+fw_version  = "#{target}/#{fw_version}"
 
 # ensure that we only create a new file if the version has changed
-version_lock_file = File.join etc_root, "fwversion.lock"
 old_version = try_read_file(version_lock_file)
 old_version = old_version[0] if old_version
 old_version.strip!           if old_version
@@ -87,12 +107,6 @@ const Char* fwversion_get_ref( void )
 	return fw_string;
 }
 "
-
-source_root = auto_code_root
-error "could not determine the auto source_root" unless auto_code_root
-
-header_file = File.join source_root, "fwversion.h"
-source_file = File.join source_root, "fwversion.c"
 
 exit if File.exist?(header_file) and File.exist?(source_file) and fw_version == old_version
 

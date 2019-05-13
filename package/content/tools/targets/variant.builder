@@ -22,7 +22,9 @@ Please refer to Halwayi's license agreement for more details
 		<PassedGlob></PassedGlob>
 
 		<!-- Variant information -->
+		<_TargetName></_TargetName>
 		<_VariantName></_VariantName>
+		<_PlatformName></_PlatformName>
 		<_VariantSwitch></_VariantSwitch>
 		<NativeCPU></NativeCPU>
 		<Defines></Defines>
@@ -109,7 +111,7 @@ Please refer to Halwayi's license agreement for more details
 	</Target>
 
 		
-	<!-- Performs clean on all Tests: Deletes  $(ArtifactRoot)\$(_VariantName)\*    $(BinRoot)\$(_VariantName)\* -->
+	<!-- Performs clean on all Tests: Deletes  $(ArtifactRoot)\$(_TargetName)\*    $(BinRoot)\$(_TargetName)\* -->
 	<Target Name="CleanAll" DependsOnTargets="_SanityCheck_CleanAll;_CreateVariantProperties;_DeleteArtifactAndBinFolders">
 	</Target>
 
@@ -168,7 +170,7 @@ Please refer to Halwayi's license agreement for more details
 	========================================= -->
 	
 	<Target Name="_SanityCheck_VariantProperties" >
-		<Error Text="_VariantName not provided" Condition=" '$([System.String]::IsNullOrWhiteSpace($(_VariantName)))' == 'true' "  />
+		<Error Text="_TargetName not provided" Condition=" '$([System.String]::IsNullOrWhiteSpace($(_TargetName)))' == 'true' "  />
 		<Error Text="_VariantSwitch not provided" Condition=" '$([System.String]::IsNullOrWhiteSpace($(_VariantSwitch)))' == 'true' " />
 
 		<Error Text="Artifacts root folder not specified" Condition="!Exists($(ArtifactsFolderRoot))"></Error>
@@ -182,10 +184,10 @@ Please refer to Halwayi's license agreement for more details
 
 	<Target Name="_CreateVariantProperties">
 		<PropertyGroup>
-			<VariantArtificatFolderRoot>$(ArtifactsFolderRoot)\$(_VariantName)</VariantArtificatFolderRoot>
+			<VariantArtificatFolderRoot>$(ArtifactsFolderRoot)\$(_TargetName)</VariantArtificatFolderRoot>
 		</PropertyGroup>
 		<PropertyGroup>
-			<VariantBinFolderRoot>$(BinFolderRoot)\$(_VariantName)</VariantBinFolderRoot>
+			<VariantBinFolderRoot>$(BinFolderRoot)\$(_TargetName)</VariantBinFolderRoot>
 		</PropertyGroup>
 	</Target>
 
@@ -652,7 +654,7 @@ Please refer to Halwayi's license agreement for more details
 													 NativeToolChainID = $(_NativeToolChain); _ProjectFile = $(ProjectFile); 
 													 _Defines = $(Defines); _ToolChainPath = $(ToolChainPath);
 													 _ToolChainTimeoutPeriod = $(ToolChainTimeoutPeriod);
-													 __VariantName = $(_VariantName); _DefaultPropertyFile = $(DefaultPropertyFile); GhostTool=$(GhostToolname) "
+													 __VariantName = $(_TargetName); _DefaultPropertyFile = $(DefaultPropertyFile); GhostTool=$(GhostToolname) "
 						 Targets="TestBuildTestFile" />
 	</Target>
 

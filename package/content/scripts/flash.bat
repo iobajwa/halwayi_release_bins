@@ -12,7 +12,7 @@ set jlink_erase=false
 call load_environment
 
 
-	rem Parse command line switches to determine the variant, feature
+	rem Parse command line switches to determine the target, feature
 :f_parse_parameter_flags
 		IF [%1]==[] (
 			GOTO f_end_parse
@@ -24,11 +24,8 @@ call load_environment
 		) else IF [%1]==[native] (
 			set native=native
 			set ghost=
-		) else IF [%1]==[var] (
-			set var=%~2
-			SHIFT
-		) else IF [%1]==[platform] (
-			set platform=%~2
+		) else IF [%1]==[target] (
+			set target=%~2
 			SHIFT
 		) else IF [%1]==[jlink_erase] (
 			set jlink_erase=true
@@ -42,27 +39,18 @@ call load_environment
 			echo     fp          : flash with power        
 			echo     ghost       : run ghost image      
 			echo     native      : flash native image  
-			echo     var         : specific variant       
-			echo     platform    : specific platform 
+			echo     target      : specific target 
 			echo     debug       : flash the debug image
 			echo     [unrecoganized flags are assumed to be feature names]
 			echo.
 			goto f_exit
 		) else (
-			IF exist "%TargetsRoot%\%1.bat" (
-				set target=%1
-			) else (
-				set FeatureName=%~1
-			)
+			set FeatureName=%~1
 		)
 	SHIFT
 	GOTO f_parse_parameter_flags
 :f_end_parse
 
-if ["%target%"] NEQ [""] (
-	echo '%target%' target..
-	call "%TargetsRoot%\%target%.bat"
-)
 
 
 	rem some sanity checking
@@ -70,60 +58,17 @@ if [%ghost%]==[] if [%native%]==[] (
 	rem we do native release by default
 	set native=native
 )
+if [%target%]==[] (
+	echo which target?
+	goto ferr_exit
+)
 
 if [%FeatureName%]==[] (
 	set FeatureName=final
 )
 
+
 echo Flashing '%FeatureName%' feature..
-
-
-	rem figure out the user supplied variant
-set variant_count=0
-FOR /F "tokens=*" %%F IN ('list variants.count') do SET variant_count=%%F
-if %variant_count% GTR 1 if ["%var%"]==[""] (
-	echo ERROR: Cannot flash multiple variants
-	goto ferr_exit
-)
-if [%variant_count%]==[1] (
-	rem get the default variant name in case there is only a single variant defined.
-	FOR /F "tokens=*" %%F IN ('list variants') do SET var=%%F
-	
-)
-
-	rem figure out the platform
-
-set platform_to_flash=%platform%
-setlocal enableextensions enabledelayedexpansion
-set platform_count=0
-
-if ["%platform%"] NEQ [""] (
-	rem make sure user has provided a single platform
-	echo "%platform%" | findstr /C:";">nul && (
-		echo ERROR: Cannot flash multiple platforms
-	)
-	set platform_count=1
-	set platform_to_flash=%platform%
-) else (
-	rem if user supplied none, get the platform available for the active variant,
-	rem provided there is only a single platform
-	FOR /F "tokens=*" %%F IN ('list platforms.first var %var%') do SET platform_to_flash=%%F
-	set first_line=1
-	FOR /F "tokens=*" %%F IN ('list platforms.count') do (
-		if !first_line!==1 set platform_count=%%F
-		set first_line=0
-	)
-)
-	rem some sanity checks
-if %platform_count%==0 (
-	echo ERROR: No platform defined
-)
-if %platform_count% GTR 1 (
-	echo ERROR: Cannot flash multiple platforms 
-	echo        %platform_count% platforms available for '%var%' variant
-	goto ferr_exit
-)
-
 
 	rem figure out the native flash script details 
 	rem the project name..
@@ -134,20 +79,20 @@ if ["%project_name%"]==[""] (
 	goto ferr_exit
 )
 
-	rem figure out the release_cpu
-for /F "tokens=*" %%F IN ('list var "%var%" release_cpu') do set CPU=%%F
+	rem the release_cpu..
+for /F "tokens=*" %%F IN ('list target.cpu.release') do set CPU=%%F
 IF ["%CPU%"]==[""] (
-	for /F "tokens=*" %%F IN ('list var "%var%" release_cpu platform %platform_to_flash%') do set CPU=%%F
+	echo ERROR: no release cpu found for the current target
+	goto ferr_exit
 )
-set variant_platform=%var%+%platform_to_flash%
-set exec_path="%BinRoot%\features\%FeatureName%\%image_type%\%variant_platform%\%project_name%.exe"
+set exec_path="%BinRoot%\features\%FeatureName%\%image_type%\%target%\%project_name%.exe"
 IF ["%NativeExecName%"]==[""] (
-	set native_exec_path="%BinRoot%\features\%FeatureName%\%image_type%\%variant_platform%\%project_name%.hex"
+	set native_exec_path="%BinRoot%\features\%FeatureName%\%image_type%\%target%\%project_name%.hex"
 ) else (
-	set native_exec_path="%BinRoot%\features\%FeatureName%\%image_type%\%variant_platform%\%NativeExecName%"
+	set native_exec_path="%BinRoot%\features\%FeatureName%\%image_type%\%target%\%NativeExecName%"
 )
-set mdb_script="%ArtifactsRoot%\etc\%FeatureName%_%variant_platform%_%image_type%_pk3_mdb.txt"
-set jlink_script="%ArtifactsRoot%\etc\%FeatureName%_%variant_platform%_%image_type%_jlink.txt"
+set mdb_script="%ArtifactsRoot%\etc\%FeatureName%_%target%_%image_type%_pk3_mdb.txt"
+set jlink_script="%ArtifactsRoot%\etc\%FeatureName%_%target%_%image_type%_jlink.txt"
 
 if exist "%mdb_script%" (
 	del "%mdb_script$"

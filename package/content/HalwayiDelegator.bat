@@ -12,8 +12,7 @@ set xmlReport=
 set buildNative=false
 set buildGhost=false
 set deltaRun=
-set selectedVariant=
-set selectedPlatform=
+set selectedTarget=
 set showToolLog=
 set releaseOrDebugBuild=false
 set projectToLoad=%CD%\project.properties
@@ -43,11 +42,8 @@ set run_after_test=true
 			set buildGhost=true
 		) else IF [%1]==[delta] (
 			set deltaRun=--delta=%date% %time%
-		) else IF [%1]==[var] (
-			set selectedVariant=%~2
-			SHIFT
-		) else IF [%1]==[platform] (
-			set selectedPlatform="%~2"
+		) else IF [%1]==[target] (
+			set selectedTarget=%~2
 			SHIFT
 		) else IF [%1]==[toolLog] (
 			set showToolLog=/toolLog
@@ -182,7 +178,7 @@ if %clean%==false if %build%==false (
 	GOTO exit_script
 )
 
-msbuild "%HalwayiToolsRoot%\project.builder" /v:%verbosity% /nologo /t:%msbuild_target% /p:ProjectFile="%projectToLoad%";BuildNative=%buildNative%;GlobPattern=%testFile%;BuildGhost=%buildGhost%;SelectedVariant="%selectedVariant%";BuildFeature="%featureToBuild%";FeatureName=%FeatureName%;SelectedPlatform=%selectedPlatform%;BuildIDE=%build_ide%;GhostToolchainName=%GhostToolchain%
+msbuild "%HalwayiToolsRoot%\project.builder" /v:%verbosity% /nologo /t:%msbuild_target% /p:ProjectFile="%projectToLoad%";BuildNative=%buildNative%;GlobPattern=%testFile%;BuildGhost=%buildGhost%;SelectedTarget=%selectedTarget%;BuildFeature="%featureToBuild%";FeatureName=%FeatureName%;BuildIDE=%build_ide%;GhostToolchainName=%GhostToolchain%
 
 
 if errorlevel 1 (

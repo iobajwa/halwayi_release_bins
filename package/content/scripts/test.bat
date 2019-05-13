@@ -10,7 +10,7 @@ set ghost=
 set native=
 set glob=
 set test_job=build
-set variant=
+set selected_target=
 set platform_chosen=
 set no_xml_report=
 set run_tests_post_build=true
@@ -31,11 +31,8 @@ pushd "%CD%"
 			set user_interface=gui
 		) else IF [%1]==[clean] (
 			set test_job=clean
-		) else if [%1]==[var] (
-			set var=%~2
-			SHIFT
-		) else if [%1]==[platform] (
-			set platform=%~2
+		) else if [%1]==[target] (
+			set target=%~2
 			SHIFT
 		) else IF [%1]==[no-xml-report] (
 			set no_xml_report=no_xml_report
@@ -53,8 +50,7 @@ pushd "%CD%"
 			echo.
 			echo  Builds and automatically runs unit-tests
 			echo.
-			echo     var       : Builds and runs tests for specificied variant/s
-			echo     platform  : Builds and runs tests for specificied platform/s
+			echo     target    : Builds and runs tests for specificied target/s
 			echo     'glob'    : Builds and runs tests matching specificied glob
 			echo     clean     : perform clean
 			echo.
@@ -71,17 +67,13 @@ pushd "%CD%"
 			echo        1. ghost images are run by default when no preference is specified.
 			echo        2. any unrecoganized switch is assumed to be a glob. In case multiple
 			echo           unrecoganized switches are passed, the last one takes effect.
-			echo        3. multiple filters {var, platform, 'glob'} can be clubbed together to
+			echo        3. multiple filters {target, 'glob'} can be clubbed together to
 			echo           fine-tune the filter process
 			echo.
 			popd
 			goto exit_script
 		) else (
-			IF exist "%TargetsRoot%\%1.bat" (
-				set target=%1
-			) else (
-				set glob=%1
-			)
+			set glob=%~1
 		)
 		SHIFT
 	GOTO parse_parameter_flags
@@ -89,18 +81,10 @@ pushd "%CD%"
 
 if ["%target%"] NEQ [""] (
 	echo '%target%' target..
-	call "%TargetsRoot%\%target%.bat"
+	set selected_target=target "%target%"
 )
 
-if ["%var%"] NEQ [""] (
-	set variant=var "%var%"
-)
-
-if ["%platform%"] NEQ [""] (
-	set platform_chosen=platform "%platform%"
-)
-
-call halwayiWrapper.bat %native% %ghost% %variant% %platform_chosen% %test_job% %glob%
+call halwayiWrapper.bat %native% %ghost% %selected_target% %test_job% "%glob%"
 
 if errorlevel 1 (
 	popd
@@ -111,6 +95,6 @@ popd
 
 if [%test_job%]==[clean] goto exit_script
 if [%run_tests_post_build%]==[false] goto exit_script
-call run %glob% %native% %ghost% %user_interface% %platform_chosen% %exit_code_flag% %no_xml_report%
+call run "%glob%" %native% %ghost% %user_interface% %selected_target% %exit_code_flag% %no_xml_report%
 
 :exit_script

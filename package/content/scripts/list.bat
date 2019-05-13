@@ -10,38 +10,37 @@ call load_environment
 :qp_parse_parameter_flags
 		IF [%1]==[] (
 			GOTO qp_end_parse
-		) else IF [%1]==[var] (
-			set var="%~2"
-			SHIFT
-		) else IF [%1]==[platform] (
-			set platform="%~2"
+		) else IF [%1]==[target] (
+			set target=%~2
 			SHIFT
 		) else IF [%1]==[?] (
 			echo.
 			echo  Know project properties directly from the command line
 			echo.
-			echo     project_name
+			echo     project.name
 			echo     context        : active target 'variant+platform' configuration
-			echo     target_context
 			echo.
 			echo     variants
-			echo     variant_count
-			echo     first_variant
-			echo     release_cpu
-			echo     test_cpu
-			echo     target_count
+			echo     variants.count
+			echo     variants.first
+			echo     variants.last
 			echo.
 			echo     targets
-			echo     target_names
-			echo     target_count
+			echo     targets.names
+			echo     targets.count
+			echo     target.cpu.release
+			echo     target.cpu.test
 			echo.
 			echo     features
-			echo     feature_count
+			echo     features.count
 			echo.
-			echo     platforms      : platforms shared by all variants if var is unspecified,
-			echo                      platforms specific to the specified var otherwise.
-			echo     platform_count : specific to specified var
+			echo     platforms
+			echo     platforms.count
+			echo     platforms.first
+			echo     platforms.last
 			echo.
+			echo     tests
+			echo     tests.count
 			goto l_exit
 		) else (
 			set field=%~1

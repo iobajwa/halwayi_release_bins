@@ -16,13 +16,12 @@ Please refer to Halwayi's license agreement for more details
     <ArtifactsOutput></ArtifactsOutput>
     <BinOutput></BinOutput>
     <GlobPattern></GlobPattern>
-    <SelectedVariant></SelectedVariant>
-    <SelectedPlatform></SelectedPlatform>
+    <SelectedTarget></SelectedTarget>
     <BuildTarget>BuildAll</BuildTarget>
     <ProjectFixtureFileName>project.fixture_config</ProjectFixtureFileName>
     <TargetFile>variant.builder</TargetFile>
 
-    <SelectedVariantError>false</SelectedVariantError>
+    <SelectedTargetError>false</SelectedTargetError>
 
     <SelectedConfiguration>Release</SelectedConfiguration>
     <BuildFeature></BuildFeature>
@@ -32,8 +31,8 @@ Please refer to Halwayi's license agreement for more details
     <GhostToolchainName></GhostToolchainName>
   </PropertyGroup>
 
-  <PropertyGroup Condition= "$([System.String]::IsNullOrEmpty('$(SelectedVariant)')) == 'false'">
-    <SelectedVariantError>true</SelectedVariantError>
+  <PropertyGroup Condition= "$([System.String]::IsNullOrEmpty('$(SelectedTarget)')) == 'false'">
+    <SelectedTargetError>true</SelectedTargetError>
   </PropertyGroup>
 
 
@@ -55,6 +54,8 @@ Please refer to Halwayi's license agreement for more details
   <UsingTask AssemblyFile= "$(BuilderTasksPath)\halwayiTasks.dll" TaskName= "FeatureTask" />
   <UsingTask AssemblyFile= "$(BuilderTasksPath)\halwayiTasks.dll" TaskName= "FilterVariantPlatformTask" />
   <UsingTask AssemblyFile= "$(BuilderTasksPath)\halwayiTasks.dll" TaskName= "ClubVariantPlatformTask" />
+  <UsingTask AssemblyFile= "$(BuilderTasksPath)\halwayiTasks.dll" TaskName= "TargetParserTask" />
+  <UsingTask AssemblyFile= "$(BuilderTasksPath)\halwayiTasks.dll" TaskName= "FilterTargetsTask" />
 
 
 
@@ -72,7 +73,7 @@ Please refer to Halwayi's license agreement for more details
 
   <!-- 
     Builds all test files found 
-    Builds all tests in the $(SelectedVariant) if a variant has been provided.
+    Builds all tests in the $(SelectedTarget) if a variant has been provided.
     -->
   <Target Name= "BuildAll" DependsOnTargets= "_SanityCheckBuildAll;_CreateArtifactsAndBinRootFoldersForTests;
                                                 _DelegateWorkToVariantBuilder;_CreateTestFixtureFile">
@@ -82,7 +83,7 @@ Please refer to Halwayi's license agreement for more details
 
   <!-- 
     Builds all test files matching the provided filter criteria 
-    Builds all test files matching in the $(SelectedVariant) if a variant has been provided.
+    Builds all test files matching in the $(SelectedTarget) if a variant has been provided.
   -->
   <Target Name= "Build" DependsOnTargets= "_SanityCheckBuild;_DisplayContextBuild;BuildAll;_CreateTestFixtureFile">
   </Target>
@@ -91,7 +92,7 @@ Please refer to Halwayi's license agreement for more details
   
   <!-- 
     Performs clean on all Tests: Deletes  $(ArtifactRoot)\$(_VariantName)\*    $(BinRoot)\$(_VariantName)\* 
-    Cleans only the $(SelectedVariant) if a variant has been provided.
+    Cleans only the $(SelectedTarget) if a variant has been provided.
   -->
   <Target Name= "CleanAll" DependsOnTargets= "_SanityCheckCleanAll;_SetupOutputFolderPropertiesForTests;_DelegateWorkToVariantBuilder">
   </Target>
@@ -99,7 +100,7 @@ Please refer to Halwayi's license agreement for more details
 
   <!-- 
     Cleans all test files matching the provided filter criteria 
-    Cleans only matching files in the $(SelectedVariant) if a variant has been provided
+    Cleans only matching files in the $(SelectedTarget) if a variant has been provided
   -->
   <Target Name= "Clean" DependsOnTargets="_SanityCheckClean;_SetupOutputFolderPropertiesForTests;_DisplayContextClean;_DelegateWorkToVariantBuilder">
   </Target>
@@ -125,7 +126,7 @@ Please refer to Halwayi's license agreement for more details
 
   <!-- 
     Performs clean on Releases: Deletes  $(ArtifactRoot)\Release\$(_VariantName)\*    $(BinRoot)\Release\$(_VariantName)\* 
-    Cleans only the $(SelectedVariant) if a variant has been provided.
+    Cleans only the $(SelectedTarget) if a variant has been provided.
   -->
   <Target Name= "CleanReleaseAll" DependsOnTargets= "_SanityCheckCleanAll;_SetupOutputFolderPropertiesForRelease;_PerformSetupForNonTestTargets;_DelegateWorkToVariantBuilder">
   </Target>
@@ -134,7 +135,7 @@ Please refer to Halwayi's license agreement for more details
 
   <!-- 
     Performs clean on Debug Releases: Deletes  $(ArtifactRoot)\Release\$(_VariantName)\*    $(BinRoot)\Release\$(_VariantName)\* 
-    Cleans only the $(SelectedVariant) if a variant has been provided.
+    Cleans only the $(SelectedTarget) if a variant has been provided.
   -->
   <Target Name= "CleanReleaseAllForDebug" DependsOnTargets= "_SanityCheckCleanAll;_SetupForDebugConfiguration;_SetupOutputFolderPropertiesForRelease;_PerformSetupForNonTestTargets;_DelegateWorkToVariantBuilder">
   </Target>
@@ -157,21 +158,21 @@ Please refer to Halwayi's license agreement for more details
       Targets shared by multiple Public Targets
   ========================================= -->
 
-  <Target Name= "_DelegateWorkToVariantBuilder" DependsOnTargets="_CreateVariantBatch" Outputs= "%(VariantsBatch.Identity)">
+  <Target Name= "_DelegateWorkToVariantBuilder" DependsOnTargets="_CreateVariantBatch" Outputs= "%(TargetsFiltered.Identity)">
 
-    <Message Text= "=== %(VariantsBatch.Variant) : %(VariantsBatch.Platform) ===" Importance="high" Condition="'@(VariantsBatch->Count())' &gt; 1"/>
+    <Message Text= "=== %(TargetsFiltered.Variant) : %(TargetsFiltered.Platform) ===" Importance="high" Condition="'@(TargetsFiltered->Count())' &gt; 1"/>
     
         <!-- Setup default settings if none has been provided for this variant -->
-        <CheckMetadataTask Items="@(VariantsBatch)" ItemToSearch="%(VariantsBatch.Identity)" MetadataToCheck="Recipes">
+        <CheckMetadataTask Items="@(TargetsFiltered)" ItemToSearch="%(TargetsFiltered.Identity)" MetadataToCheck="Recipes">
           <Output PropertyName="__containsRecipeFolders" TaskParameter="ContainsMetadata" />
         </CheckMetadataTask>
-        <CheckMetadataTask Items="@(VariantsBatch)" ItemToSearch="%(VariantsBatch.Identity)" MetadataToCheck="ToolScripts">
+        <CheckMetadataTask Items="@(TargetsFiltered)" ItemToSearch="%(TargetsFiltered.Identity)" MetadataToCheck="ToolScripts">
           <Output PropertyName="__containsToolScripts" TaskParameter="ContainsMetadata" />
         </CheckMetadataTask>
-        <CheckMetadataTask Items= "@(VariantsBatch)" ItemToSearch="%(VariantsBatch.Identity)" MetadataToCheck="ReleaseDefines">
+        <CheckMetadataTask Items= "@(TargetsFiltered)" ItemToSearch="%(TargetsFiltered.Identity)" MetadataToCheck="ReleaseDefines">
           <Output PropertyName= "__containsReleaseDefines" TaskParameter= "ContainsMetadata" />
         </CheckMetadataTask>
-        <CheckMetadataTask Items= "@(VariantsBatch)" ItemToSearch="%(VariantsBatch.Identity)" MetadataToCheck="TestDefines">
+        <CheckMetadataTask Items= "@(TargetsFiltered)" ItemToSearch="%(TargetsFiltered.Identity)" MetadataToCheck="TestDefines">
           <Output PropertyName= "__containsTestDefines" TaskParameter= "ContainsMetadata" />
         </CheckMetadataTask>
 
@@ -191,18 +192,20 @@ Please refer to Halwayi's license agreement for more details
 
         <!-- Else use the ones that have been provided -->
         <PropertyGroup>
-          <_tv_testDefines Condition=" '$(__containsTestDefines)' == 'True'" >%(VariantsBatch.TestDefines)</_tv_testDefines>
-          <_tv_ReleaseDefines Condition=" '$(__containsReleaseDefines)' == 'True'" >%(VariantsBatch.ReleaseDefines)</_tv_ReleaseDefines>
-          <_tv_RecipeFolders Condition=" '$(__containsRecipeFolders)' == 'True' ">%(VariantsBatch.Recipes)</_tv_RecipeFolders>
-          <_tv_ToolScripts Condition=" '$(__containsToolScripts)' == 'True' ">%(VariantsBatch.ToolScripts)</_tv_ToolScripts>
-          <_tv_TestFolders>%(VariantsBatch.TestFolders)</_tv_TestFolders>
-          <_tv_SourceFolders>%(VariantsBatch.SourceFolders)</_tv_SourceFolders>
+          <_tv_testDefines Condition=" '$(__containsTestDefines)' == 'True'" >%(TargetsFiltered.TestDefines)</_tv_testDefines>
+          <_tv_ReleaseDefines Condition=" '$(__containsReleaseDefines)' == 'True'" >%(TargetsFiltered.ReleaseDefines)</_tv_ReleaseDefines>
+          <_tv_RecipeFolders Condition=" '$(__containsRecipeFolders)' == 'True' ">%(TargetsFiltered.Recipes)</_tv_RecipeFolders>
+          <_tv_ToolScripts Condition=" '$(__containsToolScripts)' == 'True' ">%(TargetsFiltered.ToolScripts)</_tv_ToolScripts>
+          <_tv_TestFolders>%(TargetsFiltered.TestFolders)</_tv_TestFolders>
+          <_tv_SourceFolders>%(TargetsFiltered.SourceFolders)</_tv_SourceFolders>
+          <_tv_FeatureFolders>%(TargetsFiltered.FeatureFolders)</_tv_FeatureFolders>
         </PropertyGroup>
 
 
         <!-- Some sanity check -->
-        <Error Text="Variant+Platform (%(VariantsBatch.Variant)+%(VariantsBatch.Platform)) configuration has no TestFolders defined." Condition="'$(ReleaseBuild)' != 'true' AND '$([System.String]::IsNullOrWhiteSpace($(_tv_TestFolders)))' == 'true'" />
-        <Error Text="Variant+Platform (%(VariantsBatch.Variant)+%(VariantsBatch.Platform)) configuration has no SourceFolders defined." Condition="'$(ReleaseBuild)' == 'true' AND '$([System.String]::IsNullOrWhiteSpace($(_tv_SourceFolders)))' == 'true'" />
+        <Error Text="%(TargetsFiltered.Identity) (%(TargetsFiltered.Variant)+%(TargetsFiltered.Platform)) target has no TestFolders defined." Condition="'$(ReleaseBuild)' != 'true' AND '$([System.String]::IsNullOrWhiteSpace($(_tv_TestFolders)))' == 'true'" />
+        <Error Text="%(TargetsFiltered.Identity) (%(TargetsFiltered.Variant)+%(TargetsFiltered.Platform)) target has no SourceFolders defined." Condition="'$(ReleaseBuild)' == 'true' AND '$([System.String]::IsNullOrWhiteSpace($(_tv_SourceFolders)))' == 'true'" />
+        <Error Text="%(TargetsFiltered.Identity) (%(TargetsFiltered.Variant)+%(TargetsFiltered.Platform)) target has no FeatureFolders defined." Condition="'$(ReleaseBuild)' == 'true' AND '$([System.String]::IsNullOrWhiteSpace($(_tv_FeatureFolders)))' == 'true'" />
 
 
     <!-- Append project switch -->
@@ -225,7 +228,7 @@ Please refer to Halwayi's license agreement for more details
         </RelativeToAbsolutePathsTask>
 
         <PropertyGroup Condition=" '$(ReleaseBuild)' == 'true' ">
-          <RecipeListFile>$(EtcFolder)\%(VariantsBatch.Identity).recipe_list</RecipeListFile>
+          <RecipeListFile>$(EtcFolder)\%(TargetsFiltered.Identity).recipe_list</RecipeListFile>
         </PropertyGroup>
 
         <ItemGroup Condition= " '$(ReleaseBuild)' == 'true' ">
@@ -242,35 +245,68 @@ Please refer to Halwayi's license agreement for more details
     <!-- Finally delegate the work -->
 
     <PropertyGroup Condition="'$(ReleaseBuild)' == 'true'">
-      <NativeCPU>%(VariantsBatch.ReleaseCPU)</NativeCPU>
-      <NativeToolChain>%(VariantsBatch.ReleaseToolChain)</NativeToolChain>
-      <NativeToolChainPath>%(VariantsBatch.ReleaseToolChainPath)</NativeToolChainPath>
-      <NativeToolChainTimeout>%(VariantsBatch.ReleaseToolChainTimeoutPeriod)</NativeToolChainTimeout>
-      <NativeLinkerArgs>%(VariantsBatch.ReleaseNativeLinkerArgs)</NativeLinkerArgs>
-      <NativeCompilerArgs>%(VariantsBatch.ReleaseNativeCompilerArgs)</NativeCompilerArgs>
-      <GhostCompilerArgs>%(VariantsBatch.ReleaseGhostCompilerArgs)</GhostCompilerArgs>
-      <GhostLinkerArgs>%(VariantsBatch.ReleaseGhostLinkerArgs)</GhostLinkerArgs>
+      <NativeCPU>%(TargetsFiltered.ReleaseCPU)</NativeCPU>
+      <NativeToolChain>%(TargetsFiltered.ReleaseToolChain)</NativeToolChain>
+      <NativeToolChainPath>%(TargetsFiltered.ReleaseToolChainPath)</NativeToolChainPath>
+      <NativeToolChainTimeout>%(TargetsFiltered.ReleaseToolChainTimeoutPeriod)</NativeToolChainTimeout>
+      <NativeLinkerArgs>%(TargetsFiltered.ReleaseNativeLinkerArgs)</NativeLinkerArgs>
+      <NativeCompilerArgs>%(TargetsFiltered.ReleaseNativeCompilerArgs)</NativeCompilerArgs>
+      <GhostCompilerArgs>%(TargetsFiltered.ReleaseGhostCompilerArgs)</GhostCompilerArgs>
+      <GhostLinkerArgs>%(TargetsFiltered.ReleaseGhostLinkerArgs)</GhostLinkerArgs>
     </PropertyGroup>
     <PropertyGroup Condition="'$(ReleaseBuild)' != 'true'">
-      <NativeCPU>%(VariantsBatch.TestCPU)</NativeCPU>
-      <NativeToolChain>%(VariantsBatch.TestToolChain)</NativeToolChain>
-      <NativeToolChainPath>%(VariantsBatch.TestToolChainPath)</NativeToolChainPath>
-      <NativeToolChainTimeout>%(VariantsBatch.TestToolChainTimeoutPeriod)</NativeToolChainTimeout>
-      <NativeLinkerArgs>%(VariantsBatch.TestNativeLinkerArgs)</NativeLinkerArgs>
-      <NativeCompilerArgs>%(VariantsBatch.TestNativeCompilerArgs)</NativeCompilerArgs>
-      <GhostCompilerArgs>%(VariantsBatch.TestGhostCompilerArgs)</GhostCompilerArgs>
-      <GhostLinkerArgs>%(VariantsBatch.TestGhostLinkerArgs)</GhostLinkerArgs>
+      <NativeCPU>%(TargetsFiltered.TestCPU)</NativeCPU>
+      <NativeToolChain>%(TargetsFiltered.TestToolChain)</NativeToolChain>
+      <NativeToolChainPath>%(TargetsFiltered.TestToolChainPath)</NativeToolChainPath>
+      <NativeToolChainTimeout>%(TargetsFiltered.TestToolChainTimeoutPeriod)</NativeToolChainTimeout>
+      <NativeLinkerArgs>%(TargetsFiltered.TestNativeLinkerArgs)</NativeLinkerArgs>
+      <NativeCompilerArgs>%(TargetsFiltered.TestNativeCompilerArgs)</NativeCompilerArgs>
+      <GhostCompilerArgs>%(TargetsFiltered.TestGhostCompilerArgs)</GhostCompilerArgs>
+      <GhostLinkerArgs>%(TargetsFiltered.TestGhostLinkerArgs)</GhostLinkerArgs>
     </PropertyGroup>
+
+
+
+    <ItemGroup>
+      <FeatureFoldersItem Include="$(_tv_FeatureFolders)" />
+    </ItemGroup>
+    <RelativeToAbsolutePathsTask PathsToCheck="$(_tv_FeatureFolders)" Root="$(ProjectRoot)">
+      <Output  ItemName     = "__FeatureFoldersItem"  TaskParameter = "ConvertedPathsItem" />
+      <Output  PropertyName = "_tv_FeatureFolders"    TaskParameter = "ConvertedPaths" />
+    </RelativeToAbsolutePathsTask>
+    <ItemGroup>
+      <FeatureFoldersItem Remove="%(FeatureFoldersItem.Identity)" />
+      <FeatureFoldersItem Include="%(__FeatureFoldersItem.Identity)" />
+    </ItemGroup>
+
+    <!-- Resolve Feature -->
+    <FeatureTask UserHint= "$(BuildFeature)" 
+                 FeaturesRoot= "@(FeatureFoldersItem)"
+                 FeaturesCodeRoot= "@(FeatureFoldersItem)"
+                 OutputFolder= "$(EtcFolder)"
+                 FeatureSourceName= "$(FeatureSourceName)"
+                 FeatureNamingPattern="$(FeatureNamingPattern)"
+                 FeatureFileExtension="$(FeatureFileExtension)"
+                 FinalFeatureName="$(FinalFeatureName)"
+                 SourcePaths="$(CodeRoot)\source"
+                 Condition=" '$(ReleaseBuild)' == 'true' "
+                 >
+      <Output PropertyName= "BuildFeature" TaskParameter= "FeatureFile" />
+      <Output PropertyName= "FeatureCFile" TaskParameter= "FeatureMetaFile" />
+    </FeatureTask>
+
+
 
     <MSBuild Projects= "$(TargetsToolPath)\$(TargetFile)"
              Targets= "$(BuildTarget)"
-             Properties= "_VariantName = %(VariantsBatch.Identity); _VariantSwitch = %(VariantsBatch.Switch);
+             Properties= " _TargetName = %(TargetsFiltered.Identity); _VariantName = %(TargetsFiltered.Variant);
+                           _PlatformName = %(TargetsFiltered.Platform); _VariantSwitch = %(TargetsFiltered.Switch);
                            ProjectFile = $(ProjectFile); _NativeToolChain = $(NativeToolChain); 
                            _TestFolders = %(TestFolders); 
-                           _SourceFolders = %(SourceFolders); _SupportFolders = %(VariantsBatch.SupportFolders); 
-                           _NativeSourceFolders = %(VariantsBatch.NativeSourceFolders); _GhostSourceFolders = %(VariantsBatch.GhostSourceFolders); 
-                           _NativeSupportFolders = %(VariantsBatch.NativeSupportFolders); _GhostSupportFolders = %(VariantsBatch.GhostSupportFolders); 
-                           _IncludeFolders = %(VariantsBatch.IncludeFolders);  BuildNativeAsWell = $(BuildNative); BuildGhostAsWell = $(BuildGhost);
+                           _SourceFolders = %(SourceFolders); _SupportFolders = %(TargetsFiltered.SupportFolders); 
+                           _NativeSourceFolders = %(TargetsFiltered.NativeSourceFolders); _GhostSourceFolders = %(TargetsFiltered.GhostSourceFolders); 
+                           _NativeSupportFolders = %(TargetsFiltered.NativeSupportFolders); _GhostSupportFolders = %(TargetsFiltered.GhostSupportFolders); 
+                           _IncludeFolders = %(TargetsFiltered.IncludeFolders);  BuildNativeAsWell = $(BuildNative); BuildGhostAsWell = $(BuildGhost);
                            PassedGlob = $(GlobPattern); ArtifactsFolderRoot = $(ArtifactsOutput); 
                            BinFolderRoot = $(BinOutput); NativeCPU = $(NativeCPU); 
                            Defines = $(_tv_testDefines); ReleaseDefines = $(_tv_ReleaseDefines);
@@ -278,7 +314,7 @@ Please refer to Halwayi's license agreement for more details
                            SelectedConfiguration = $(SelectedConfiguration); BuildFeature = $(BuildFeature); FeatureCFile = $(FeatureCFile);
                            NativeLinkerArgs = $(NativeLinkerArgs); RecipeListFile = $(RecipeListFile);
                            ToolScriptsFolders = $(_tv_ToolScripts); ToolChainPath = $(NativeToolChainPath);
-                           ToolChainTimeoutPeriod = $(NativeToolChainTimeout); PlatformName = %(VariantsBatch.Platform);
+                           ToolChainTimeoutPeriod = $(NativeToolChainTimeout); PlatformName = %(TargetsFiltered.Platform);
                            NativeCompilerArgs = $(NativeCompilerArgs); GhostCompilerArgs = $(GhostCompilerArgs); GhostLinkerArgs = $(GhostLinkerArgs);
                            BuildIDE = $(BuildIDE); GhostToolname=$(GhostToolchainName);
                         "
@@ -288,7 +324,8 @@ Please refer to Halwayi's license agreement for more details
 
   <Target Name="_CreateVariantBatch">
 
-    <ClubVariantPlatformTask
+    <TargetParserTask
+        Targets="@(Targets)"
         Variants="@(Variants)"
         Platforms="@(Platforms)"
         PlatformNameToken="$(PlatformName)"
@@ -297,17 +334,15 @@ Please refer to Halwayi's license agreement for more details
         DefaultSimulatorTimeoutPeriod="$(SimulatorTimeoutPeriod)"
         GhostToolchain="$(GhostToolchainName)"
       >
-      <Output ItemName= "VariantsBatchAll" TaskParameter= "VariantsClubbed" />
-    </ClubVariantPlatformTask>
+      <Output ItemName= "TargetsAll" TaskParameter= "ParsedTargets" />
+    </TargetParserTask>
 
-    <FilterVariantPlatformTask
-        Variants="@(VariantsBatchAll)"
-        Platforms="@(Platforms)"
-        UserVariantChoice="$(SelectedVariant)"
-        UserPlatformChoice="$(SelectedPlatform)"
+    <FilterTargetsTask
+        Targets="@(TargetsAll)"
+        UserTargetChoice="$(SelectedTarget)"
       >
-      <Output ItemName= "VariantsBatch" TaskParameter= "FilteredVariants" />
-    </FilterVariantPlatformTask>
+      <Output ItemName= "TargetsFiltered" TaskParameter= "FilteredTargets" />
+    </FilterTargetsTask>
 
   </Target>
 
@@ -331,29 +366,16 @@ Please refer to Halwayi's license agreement for more details
 
     <MakeDir Directories="$(EtcFolder)" />
     <MakeDir Directories="$(IdeFolder)" />
-
-    <!-- Resolve Feature -->
-    <FeatureTask UserHint= "$(BuildFeature)" 
-                 FeaturesRoot= "$(FeaturesRoot)"
-                 FeaturesCodeRoot= "$(FeatureCodeRoot)"
-                 OutputFolder= "$(EtcFolder)"
-                 FeatureSourceName= "$(FeatureSourceName)"
-                 FeatureNamingPattern="$(FeatureNamingPattern)"
-                 FeatureFileExtension="$(FeatureFileExtension)"
-                 FinalFeatureName="$(FinalFeatureName)"
-                 SourcePaths="$(CodeRoot)\source"
-                 >
-      <Output PropertyName= "BuildFeature" TaskParameter= "FeatureFile" />
-      <Output PropertyName= "FeatureCFile" TaskParameter= "FeatureMetaFile" />
-    </FeatureTask>
   </Target>
 
 
-  <Target Name="_CreateTestFixtureFile" Inputs="$(ProjectFile)" Outputs="$(BinOutput)\$(ProjectFixtureFileName)">
+  <Target Name="_CreateTestFixtureFile">
     <Message Text="File out-of-date: '$(BinOutput)\$(ProjectFixtureFileName)'. Creating file." Importance="normal" />
+    <Message Text="@(Variants)" />
 
     <TestFixtureGeneratorTask
-      Variants="@(VariantsBatchAll)"
+      Targets="@(TargetsAll)"
+      Variants="@(Variants)"
       Platforms="@(Platforms)"
       ProjectName="$(ProjectName)"
       TestFixtureFileName="$(BinOutput)\$(ProjectFixtureFileName)"
@@ -364,16 +386,16 @@ Please refer to Halwayi's license agreement for more details
   </Target>
 
 
-  <Target Name= "_SanityCheckSelectedVariant" Condition= "$([System.String]::IsNullOrEmpty('$(SelectedVariant)')) == 'false'" DependsOnTargets= "_CheckSelectedVariantAgainstAllVariantNames">
-    <Error Text= "Variant '$(SelectedVariant)' not found" Condition= "'$(SelectedVariantError)' == 'true' " />
+  <Target Name= "_SanityCheckSelectedTarget" Condition= "$([System.String]::IsNullOrEmpty('$(SelectedTarget)')) == 'false'" DependsOnTargets= "_CheckSelectedVariantAgainstAllTargetNames">
+    <Error Text= "Target '$(SelectedTarget)' not found" Condition= "'$(SelectedTargetError)' == 'true' " />
   </Target>
 
-  <Target Name= "_CheckSelectedVariantAgainstAllVariantNames" Condition= "$([System.String]::IsNullOrEmpty('$(SelectedVariant)')) == 'false'" Outputs= "%(Variants.Identity)">
+  <Target Name= "_CheckSelectedVariantAgainstAllTargetNames" Condition= "$([System.String]::IsNullOrEmpty('$(SelectedTarget)')) == 'false'" Outputs= "%(Targets.Identity)">
     <PropertyGroup>
-      <__thisVariant>%(Variants.Identity)</__thisVariant>
+      <__thisVariant>%(Targets.Identity)</__thisVariant>
     </PropertyGroup>
-    <PropertyGroup Condition= " '$(SelectedVariant)' == '$(__thisVariant)' ">
-      <SelectedVariantError>false</SelectedVariantError>
+    <PropertyGroup Condition= " '$(SelectedTarget)' == '$(__thisVariant)' ">
+      <SelectedTargetError>false</SelectedTargetError>
     </PropertyGroup>
   </Target>
 
@@ -401,7 +423,7 @@ Please refer to Halwayi's license agreement for more details
       'BuildAll' private helper targets 
   ========================================= -->
 
-  <Target Name= "_SanityCheckBuildAll" DependsOnTargets= "_SanityCheckSelectedVariant">
+  <Target Name= "_SanityCheckBuildAll" DependsOnTargets= "_SanityCheckSelectedTarget">
     <Error Text= "Project file '$(ProjectFile)' not found." Condition= " !Exists($(ProjectFile)) " />
     <Error Text= "BuildNative not provided." Condition= " '$(BuildNative)' == '' " />
     <Error Text= "BuildGhost not provided." Condition= " '$(BuildGhost)' == '' " />
@@ -433,7 +455,7 @@ Please refer to Halwayi's license agreement for more details
       'Build' private helper targets 
   ========================================= -->
   
-  <Target Name= "_SanityCheckBuild" DependsOnTargets= "_SanityCheckSelectedVariant">
+  <Target Name= "_SanityCheckBuild" DependsOnTargets= "_SanityCheckSelectedTarget">
     <Error Text= "Test File not provided." Condition= " $([System.String]::IsNullOrEmpty('$(GlobPattern)')) == 'true' " />
     <Error Text= "Nothing to build- neither ghost nor native." Condition= " '$(BuildNative)' == 'false' AND '$(BuildGhost)' == 'false' " />
     <PropertyGroup>
@@ -452,14 +474,14 @@ Please refer to Halwayi's license agreement for more details
       'CleanAll' private helper targets 
   ========================================= -->
 
-  <Target Name= "_SanityCheckCleanAll" DependsOnTargets= "_SanityCheckSelectedVariant">
+  <Target Name= "_SanityCheckCleanAll" DependsOnTargets= "_SanityCheckSelectedTarget">
     <PropertyGroup>
       <BuildTarget>CleanAll</BuildTarget>
     </PropertyGroup>
     <Error Text= "Nothing to clean- neither ghost nor native." Condition= " '$(BuildNative)' == 'false' AND '$(BuildGhost)' == 'false' " />
   </Target>
 
-  <Target Name= "_RemoveRootFolders" Condition ="$([System.String]::IsNullOrEmpty('$(SelectedVariant)')) == 'true'" >
+  <Target Name= "_RemoveRootFolders" Condition ="$([System.String]::IsNullOrEmpty('$(SelectedTarget)')) == 'true'" >
     <RemoveDir Directories="$(ArtifactsOutput)" />
     <RemoveDir Directories="$(BinOutput)" />
 

@@ -5,6 +5,7 @@ formats: hex, elf, map
 # bins_root: bin
 
 production:
+  targets: machine1
   - name/spaced/feature1 > feature1
   - feature2:
       source: name/spaced/feature2
@@ -13,11 +14,16 @@ production:
   - adc
 
 board_bring_up:
-  targets: machine3
   assets:
     - docs
-    - scripts/fota.rb  > fota
+    - scripts/some-script.rb  > some-script
   bins:
-    - feature3: variant+platform
-    - feature4
-    - feature5: "> altered/namespace/feature5"
+    - demo1:
+        destination: new/namespace/demo1
+        targets: machine2
+    - demo2:
+        destination: new/namespace/demo2
+        targets: machine2
+    - demo3:
+        targets: machine2
+    - another

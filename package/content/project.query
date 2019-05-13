@@ -31,8 +31,7 @@ Please refer to Halwayi's license agreement for more details
   <Import Project="$(ProjectFile)"/>
   
   <UsingTask AssemblyFile="$(BuilderTasksPath)\halwayiTasks.dll" TaskName="ProjectQueryTask" />
-  <UsingTask AssemblyFile="$(BuilderTasksPath)\halwayiTasks.dll" TaskName="FilterVariantPlatformTask" />
-  <UsingTask AssemblyFile="$(BuilderTasksPath)\halwayiTasks.dll" TaskName="ClubVariantPlatformTask" />
+  <UsingTask AssemblyFile= "$(BuilderTasksPath)\halwayiTasks.dll" TaskName="TargetParserTask" />
 
 
 
@@ -48,23 +47,19 @@ Please refer to Halwayi's license agreement for more details
   -->
 
 
-  <Target Name="Interogate" DependsOnTargets="_CreateVariantBatch">
+  <Target Name="Interogate" DependsOnTargets="_ParseTargets">
     <ProjectQueryTask Field="$(FieldToQuery)" 
                       ProjectName="$(ProjectName)"
                       SelectedTarget="$(SelectedTarget)"
-                      SelectedVariant="$(SelectedVariant)" 
-                      SelectedPlatform="$(SelectedPlatform)" 
-                      Variants="@(VariantsBatch)"
-                      VariantsRaw="@(Variants)"
-                      PlatformsRaw="@(Platforms)"
-                      FeaturesRoot="$(FeatureCodeRoot)"
+                      Targets="@(TargetsAll)"
+                      Variants="@(Variants)"
+                      Platforms="@(Platforms)"
                       FeatureNamingPattern="$(FeatureNamingPattern)"
                       FeatureSourceName="$(FeatureSourceName)"
                       ProjectRoot="$(ProjectRoot)"
                       FeatureFilesRoot="$(FeaturesRoot)"
                       SourcePaths="$(CodeRoot)\source"
                       FeatureFileExtension="$(FeatureFileExtension)"
-                      TargetsRoot="$(TargetsRoot)"
                       TestFilePrefix="$(TestFilePrefix)"
                       Condition=" '$(Handeled)' != 'true' "/>
   </Target>
@@ -81,28 +76,19 @@ Please refer to Halwayi's license agreement for more details
   ************************************************************************************************************************
   -->
 
-  <Target Name="_CreateVariantBatch">
-
-    <ClubVariantPlatformTask
+  <Target Name="_ParseTargets">
+    <TargetParserTask
+        Targets="@(Targets)"
         Variants="@(Variants)"
         Platforms="@(Platforms)"
         PlatformNameToken="$(PlatformName)"
         KnownToolChains="@(ToolChains)"
         DefaultGhostTimeoutPeriod="$(GhostTimeoutPeriod)"
         DefaultSimulatorTimeoutPeriod="$(SimulatorTimeoutPeriod)"
+        GhostToolchain="$(GhostToolchainName)"
       >
-      <Output ItemName="VariantsBatchAll" TaskParameter="VariantsClubbed" />
-    </ClubVariantPlatformTask>
-
-    <FilterVariantPlatformTask
-        Variants="@(VariantsBatchAll)"
-        Platforms="@(Platforms)"
-        UserVariantChoice="$(SelectedVariant)"
-        UserPlatformChoice="$(SelectedPlatform)"
-      >
-      <Output ItemName="VariantsBatch" TaskParameter="FilteredVariants" />
-    </FilterVariantPlatformTask>
-
+      <Output ItemName= "TargetsAll" TaskParameter= "ParsedTargets" />
+    </TargetParserTask>
   </Target>
 
   

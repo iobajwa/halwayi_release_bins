@@ -8,6 +8,8 @@ pushd "%CD%"
 call load_environment.bat
 
 set glob=
+set variant=
+set platform=
 set selected_glob=
 set selected_runner=
 set runNative=
@@ -35,8 +37,11 @@ set suppress_exit_code=false
 		set suppress_exit_code=true
 	) else IF [%1]==[hide_exit_code] (
 		set suppress_exit_code=true
-	) else IF [%1]==[var] (
-		set var=%~2
+	) else IF [%1]==[target] (
+		set target=%~2
+		SHIFT
+	) else IF [%1]==[variant] (
+		set variant=%~2
 		SHIFT
 	) else IF [%1]==[platform] (
 		set platform=%~2
@@ -58,7 +63,7 @@ set suppress_exit_code=false
 		echo     native   : run native images
 		echo.
 		echo     platform : run tests for specified platform/s only
-		echo     var      : run tests for specified variant/s only
+		echo     variant  : run tests for specified variant/s only
 		echo     glob     : run tests matching passed glob
 		echo.
 		echo.
@@ -66,30 +71,25 @@ set suppress_exit_code=false
 		echo        1. ghost images are run by default when no preference is specified.
 		echo        2. any unrecoganized switch is assumed to be a glob. In case multiple
 		echo           unrecoganized switches are passed, the last one takes effect.
-		echo        3. multiple filters {var, platform, 'glob'} can be clubbed together to
+		echo        3. multiple filters {variant, platform, 'glob'} can be clubbed together to
 		echo           fine-tune the filter process
 		echo.
 		goto r_exit
 	) else (
-		IF exist "%TargetsRoot%\%1.bat" (
-			set target=%1
-		) else (
-			rem treat this as a feature 
-			set glob=%1
-		)
+		set glob=%~1
 	)
 	SHIFT
 	GOTO parse_parameter_flags
 :end_parse
 
 cd %BinRoot%\tests
+
 if ["%target%"] NEQ [""] (
-	echo '%target%' target..
-	call "%TargetsRoot%\%target%.bat"
+	set filter_target=--target=%target%
 )
 
-if ["%var%"] NEQ [""] (
-	set filter_variant=--variant=%var%
+if ["%variant%"] NEQ [""] (
+	set filter_variant=--variant=%variant%
 )
 
 if ["%platform%"] NEQ [""] (
@@ -128,9 +128,9 @@ if ["%runGhost%"]==[""] set runGhost=false
 if ["%runNative%"]==[""] set runNative=false
 
 if ["%guiRunner%"]==["false"] (
-	"%toolRoot%\runner-CUI.exe" "project.fixture_config" %selected_glob% %xmlReport% %deltaRun% --run_on_ghost=%runGhost% --run_on_simulator=%runNative% %showToolLog% %filter_variant% %filter_platform%
+	"%toolRoot%\runner-CUI.exe" "project.fixture_config" %selected_glob% %xmlReport% %deltaRun% --run_on_ghost=%runGhost% --run_on_simulator=%runNative% %showToolLog% %filter_target% %filter_variant% %filter_platform%
 ) else (
-	"%toolRoot%\runner.exe" "project.fixture_config" --run_selected --run_on_ghost=%runGhost% --run_on_simulator=%runNative% %xmlReport% %deltaRun% --exit_on_esc %selected_glob% %filter_variant% %filter_platform%
+	"%toolRoot%\runner.exe" "project.fixture_config" --run_selected --run_on_ghost=%runGhost% --run_on_simulator=%runNative% %xmlReport% %deltaRun% --exit_on_esc %selected_glob% %filter_target% %filter_variant% %filter_platform%
 ) 
 
 :r_exit

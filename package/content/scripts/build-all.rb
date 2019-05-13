@@ -297,26 +297,11 @@ total_feature_count   = 0
 targets_features_list = {}
 target_names.each { |tname|
 	next if (targets_accept_filter.length > 0 && !targets_accept_filter.glob_include?(tname, true)) || (targets_ignore_filter.glob_include?(tname, true))
-	raw_output        = `set target=#{tname} && list features`
 	features_to_build = []
-	lines             = string_to_lines raw_output
-	lines             = lines[1..lines.length-1]
-	found_marker = false
-	lines.each { |line|
-		unless line =~ /final/i
-			unless found_marker
-				puts "skipping : #{line}" if verbose
-				found_marker = true if line =~ /by naming/i
-				next
-			end
-			next if line =~ /convention/i
-		end
-		l = line.strip
-		next if l == ""
-		name = File.basename l
-		next if name.start_with? '_' or name.end_with? '_'
-		next if (features_accept_filter.length > 0 && !features_accept_filter.glob_include?(l, true)) || (features_ignore_filter.glob_include?(l, true))
-		features_to_build.push l
+	all_features = Halwayi.features tname
+	all_features.each { |f| 
+		next if (features_accept_filter.length > 0 && !features_accept_filter.glob_include?(f, true)) || (features_ignore_filter.glob_include?(f, true))
+		features_to_build.push f
 	}
 	error "#{tname}: no feature to build"                                if features_to_build.length == 0
 	puts  "#{tname}: #{features_to_build} (#{features_to_build.length})" if verbose
@@ -370,10 +355,10 @@ targets.each_pair { |tname, tmeta|
 		puts "    building '#{tname}/#{feature_name}' feature"
 		puts "    output: #{output_file}"
 
-		exit_code = build_result = nil
+		exit_code  = build_result = nil
 		start_time = Time.now
 
-		pid = Process.spawn "build #{tname} #{feature_name} > #{output_file} 2>&1"
+		pid = Process.spawn "build target #{tname} #{feature_name} > #{output_file} 2>&1"
 		begin
 			Timeout.timeout build_timeout do
 				puts "    building.."
@@ -407,7 +392,7 @@ targets.each_pair { |tname, tmeta|
 	}
 	
 	puts "  #{target_total_build_count} built, #{target_total_passed_count} succeeded."
-	puts "  took #{target_total_build_time} seconds."
+	puts "  took #{"%.3f" % target_total_build_time} seconds."
 	puts ""
 	
 	tmeta[:build] = { 
@@ -428,7 +413,7 @@ targets.each_pair { |tname, tmeta|
 puts ""
 puts "summary:"
 puts "  total: #{total_build_count}  succeeded: #{total_passed_count}  failed: #{total_failed_count}  timedout: #{total_timedout_count}"
-puts "  took #{total_time} seconds"
+puts "  took #{"%.3f" % total_time} seconds"
 puts ""
 
 # render the report to compatible test report

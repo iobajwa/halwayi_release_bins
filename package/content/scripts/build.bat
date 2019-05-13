@@ -13,8 +13,7 @@ set feature_file=
 set FeatureName=final
 set program=false
 set program_with_power=false
-set var_chosen=
-set platform_chosen=
+set target_chosen=
 set ProjectName=
 set CPU=
 set build_ide=false
@@ -24,7 +23,7 @@ call load_environment
 
 
 
-	rem Parse command line switches to determine the variant, feature
+	rem Parse command line switches to determine the target, feature
 :rv_parse_parameter_flags
 		IF [%1]==[] (
 			GOTO rv_end_parse
@@ -66,20 +65,16 @@ call load_environment
 			set clean=true
 		) else IF [%1]==[ide] (
 			set build_ide=true
-		) else IF [%1]==[var] (
-			set var=%~2
+		) else IF [%1]==[target] (
+			set target=%~2
 			SHIFT
 		) else IF [%1]==[platform] (
 			set platform=%~2
 			SHIFT
 		) else (
-			IF exist "%TargetsRoot%\%1.bat" (
-				set target=%1
-			) else (
-				rem treat this as a feature 
-				set feature_file=feature %1
-				set FeatureName=%~1
-			)
+			rem treat this as a feature 
+			set feature_file=feature %1
+			set FeatureName=%~1
 		)
 	SHIFT
 	GOTO rv_parse_parameter_flags
@@ -88,15 +83,7 @@ call load_environment
 	rem display the context
 if ["%target%"] NEQ [""] (
 	echo '%target%' target..
-	call "%TargetsRoot%\%target%.bat"
-)
-if ["%var%"] NEQ [""] (
-	echo '%var%' variant..
-	set var_chosen=var "%var%"
-)
-if ["%platform%"] NEQ [""] (
-	echo '%platform%' platform..
-	set platform_chosen=platform "%platform%"
+	set target_chosen=target "%target%"
 )
 if ["%feature_file%"] NEQ [""] (
 	echo '%FeatureName%' feature..
@@ -113,7 +100,7 @@ if [%ghost%]==[] if [%native%]==[] (
 
 	
 	rem build the thing
-call halwayiWrapper.bat %native% %ghost% %halwayi_target%%debug% %feature_file% %var_chosen% %platform_chosen%
+call halwayiWrapper.bat %native% %ghost% %halwayi_target%%debug% %feature_file% %target_chosen%
 
 if errorlevel 1 (
 	exit /b 1
@@ -132,7 +119,7 @@ if [%program_with_power%]==[true] (
 if ["%debug%"] NEQ [""] (
 	set debug=debug
 )
-call flash.bat %params% %native% %ghost% %debug% %var_chosen% %FeatureName% %platform_chosen%
+call flash.bat %params% %native% %ghost% %debug% %target_chosen% %FeatureName%
 if errorlevel 1 (
 	exit /b 1
 )

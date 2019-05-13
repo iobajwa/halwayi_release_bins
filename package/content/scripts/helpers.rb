@@ -17,7 +17,13 @@ class String
 	def rchomp(sep=$/) self.start_with?(sep) ? self[sep.size..-1] : self end
 	def lrchomp(sep)   rchomp(sep).chomp(sep) end
 end
-def create_file(name, contents) f = File.new(name, "w"); f.puts(contents);f.close(); end
+def create_file(name, contents) 
+	dirname = File.dirname(name)
+	unless File.directory?(dirname)
+  		FileUtils.mkdir_p(dirname)
+	end
+	f = File.new(name, "w"); f.puts(contents);f.close(); 
+end
 def try_read_file(name) 
 	return nil unless File.exists?(name)
 	return File.readlines name

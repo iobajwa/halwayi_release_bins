@@ -25,8 +25,6 @@ class Halwayi
 	@build_magic_root = @build_magic_root.gsub('\\', '/')
 	@art_root         = @art_root.gsub('\\', '/')
 	@magic_root       = @magic_root.gsub('\\', '/')
-	@variant          = ENV['var']
-	@platform         = ENV['platform']
 	@target           = ENV['target']
 	@targets          = nil
 	@project_name     = nil
@@ -54,19 +52,15 @@ class Halwayi
 	end
 	def Halwayi.auto_code_root target_name=nil
 		target_name = @target if target_name == nil or target_name == ''
-		if target_name
-			targets = Halwayi.targets
-			vp_config = targets[target_name][:vp_config]
-			return File.join @art_root, "auto", vp_config, "code", "source" if vp_config
-		end
-		if @variant and @platform
-			return File.join @art_root, "auto", "#{@variant}+#{@platform}", "code", "source"
-		end
+		return File.join @art_root, "auto", target_name, "code", "source" if target_name
 		return nil
 	end
 	def Halwayi.project_name
 		@project_name = `list project.name`.strip unless @project_name
 		return @project_name
+	end
+	def Halwayi.target
+		return @target
 	end
 	def Halwayi.targets
 		unless @targets
@@ -74,7 +68,7 @@ class Halwayi
 			output   = `list targets`.gsub("\r\n","\n").split("\n").map(&:strip)
 			output.each { |raw|
 				target_name = raw[0...raw.index('(')].strip
-				vp_config = raw[raw.index('(')+1...raw.index(')')].strip
+				vp_config   = raw[raw.index('(')+1...raw.index(')')].strip
 				variant, platform = vp_config.split('+')
 				variant.strip!
 				platform.strip!
@@ -82,6 +76,30 @@ class Halwayi
 			}
 		end
 		return @targets
+	end
+	def Halwayi.features target_name=nil
+		command = "list features"
+		error "target '#{target_name}' not found" if target_name && !Halwayi.targets.include?(target_name)
+		command += " target #{target_name}"
+		raw_output    = `#{command}`
+		features_list = []
+		lines         = string_to_lines raw_output
+		found_marker  = false
+		lines.each { |line|
+			unless line =~ /final/i
+				unless found_marker
+					found_marker = true if line =~ /by naming/i
+					next
+				end
+				next if line =~ /convention/i
+			end
+			l = line.strip
+			next if l == ""
+			name = File.basename l
+			next if name.start_with? '_' or name.end_with? '_'
+			features_list.push l
+		}
+		return features_list
 	end
 	def Halwayi.target_names
 		return Halwayi.targets.keys
@@ -101,6 +119,12 @@ class Halwayi
 		return File.join @bin_root, "features", feature_name, build_type, vp_config, "#{image_name}#{image_extension}"
 	end
 	def Halwayi.parse_variant_platform(str) return str.split('+').map(&:strip); end
+	def Halwayi.get_fwver
+		raw_output = string_to_lines `fwver`
+		output = raw_output[1]
+		output.strip if output
+		return output
+	end
 end
 def project_root
 	return Halwayi.project_root

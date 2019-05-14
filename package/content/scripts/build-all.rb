@@ -352,8 +352,8 @@ targets.each_pair { |tname, tmeta|
 
 		feature_name_transformed = tname + '.' + feature_name.gsub('/', '.') + ".build-output.txt"
 		output_file = File.join output_path, feature_name_transformed
-		puts "    building '#{tname}/#{feature_name}' feature"
-		puts "    output: #{output_file}"
+		puts "", "    building : #{feature_name}"
+		puts "    output   : #{output_file}", ""
 
 		exit_code  = build_result = nil
 		start_time = Time.now
@@ -361,26 +361,20 @@ targets.each_pair { |tname, tmeta|
 		pid = Process.spawn "build target #{tname} #{feature_name} > #{output_file} 2>&1"
 		begin
 			Timeout.timeout build_timeout do
-				puts "    building.."
+				print "    building : "
 				Process.wait pid
 				exit_code    = $?.exitstatus
 				build_result = exit_code == 0 ? :passed : :failed
 			end
 		rescue Timeout::Error
-			puts "    build timedout, killing it.."
+			puts "timedout, killing it.."
 			system "taskkill /f /t /pid #{pid}"
 			exit_code    = -1
 			build_result = :timedout
 		end
 
-		# build completed, capture report
-		output     = File.exist?(output_file) ? File.readlines(output_file) : []
-		build_time = Time.now - start_time
-		puts "    build #{build_result}" + (build_result == :passed ? "" : " (#{exit_code})") + (build_result != :timedout ? ", took #{"%.3f" % build_time} seconds." : "") unless build_result == :timedout
-		etd_seconds = calculate_etd_seconds total_time + target_total_build_time + build_time, total_feature_count, total_build_count + target_total_build_count + 1
-		puts "    ETD #{etd_seconds=='unknown' ? '' : '~'}#{etd_seconds.round}#{ etd_seconds=='unknown' ? '.' : ' seconds.'}"
-		puts "    "
-
+		output       = File.exist?(output_file) ? File.readlines(output_file) : []
+		build_time   = Time.now - start_time
 		feature_node = tree.get_leaf feature_name
 		feature_node.meta = { :time => build_time, :result => build_result, :exit_code => exit_code, :output => output }
 		
@@ -392,6 +386,13 @@ targets.each_pair { |tname, tmeta|
 
 		tmeta[:features_failed].push   feature_name if build_result == :failed
 		tmeta[:features_timedout].push feature_name if build_result == :timedout
+
+		# build completed, capture report
+		print "#{build_result}" + (build_result == :passed ? "" : " (#{exit_code})") + (build_result != :timedout ? ", took #{"%.3f" % build_time} seconds" : "") unless build_result == :timedout
+		etd_seconds = calculate_etd_seconds total_time + target_total_build_time + build_time, total_feature_count, total_build_count + target_total_build_count + 1
+		puts "    #{target_total_failed_count} / #{target_total_build_count} / #{feature_list.length}  (failed / built / total)"
+		puts "    ETD      : #{etd_seconds=='unknown' ? '' : '~'}#{etd_seconds.round}#{ etd_seconds=='unknown' ? '.' : ' seconds'}"
+		puts "    "
 	}
 	
 	puts "  #{target_total_build_count} built, #{target_total_passed_count} succeeded."

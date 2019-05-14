@@ -279,7 +279,7 @@ user_meta.each_pair { |bundle_name, bundle_meta|
 			applicable_targets.each { |t|  
 				bin_array = images_for_all_targets[t]
 				bin_array = [] unless bin_array
-				bin_array.push bin_meta
+				bin_array.push bin_meta.clone
 				images_for_all_targets[t] = bin_array
 			}
 
@@ -618,7 +618,9 @@ deploy_bundles.each_pair { |bundle_name, bundle_meta|
 		}
 	}
 
-	deployed_bundle_meta["assets"]  = assets
+	assets_deployed_list = []
+	assets.each { |a| assets_deployed_list.push File.join("assets", a) }
+	deployed_bundle_meta["assets"]  = assets_deployed_list
 	deployed_bundle_meta["targets"] = targets
 
 	file_name = File.join bundle_meta[:deploy_path], "bundle.yaml"
@@ -665,7 +667,7 @@ deploy_bundles.each_pair { |bundle_name, bundle_meta|
 		}
 	}
 	if bundle_meta[:assets].length > 0
-		bundle_meta[:assets][:dirs].each_pair { |source, meta|  deployed_assets.push meta[:destination] }
+		bundle_meta[:assets][:dirs].each_pair  { |source, meta| deployed_assets.push meta[:destination] }
 		bundle_meta[:assets][:files].each_pair { |source, meta| deployed_assets.push meta[:destination] }
 	end
 

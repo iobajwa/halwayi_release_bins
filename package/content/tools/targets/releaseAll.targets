@@ -493,11 +493,11 @@ Please refer to Halwayi's license agreement for more details
 	</Target>
 
 	<Target Name="_ParseEncodedDefines">
-		<FeatureBuildConfigValidatorTask FeatureCFile="$(FeatureCFile)" TargetName="$(_TargetName)" VariantName="$(_VariantName)" PlatformName="$(_PlatformName)" FeatureName="$(FeatureName)" >
-			<Output PropertyName= "_DefinesEncodedInFeature" TaskParameter= "ParsedDefines" />
+		<FeatureBuildConfigValidatorTask FeatureCFile="$(FeatureCFile)" TargetName="$(_TargetName)" VariantName="$(_VariantName)" PlatformName="$(_PlatformName)" FeatureName="$(FeatureName)" BaselineDefines="$(ReleaseDefines)">
+			<Output PropertyName= "_FinalDefines" TaskParameter= "ParsedDefines" />
 		</FeatureBuildConfigValidatorTask>
-		<PropertyGroup Condition=" '$(_DefinesEncodedInFeature)' != '' ">
-			<ReleaseDefines>$(ReleaseDefines);$(_DefinesEncodedInFeature)</ReleaseDefines>
+		<PropertyGroup>
+			<ReleaseDefines>$(_FinalDefines)</ReleaseDefines>
 		</PropertyGroup>
 
 		<Message Text="Found Defines: $(ReleaseDefines)" Importance="Low" Condition=" '$(_DefinesEncodedInTest)' != '' "/>

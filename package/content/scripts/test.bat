@@ -84,6 +84,9 @@ if ["%target%"] NEQ [""] (
 	set selected_target=target "%target%"
 )
 
+if ["%glob%"]==[""] (
+	set glob=*
+)
 call halwayiWrapper.bat %native% %ghost% %selected_target% %test_job% "%glob%"
 
 if errorlevel 1 (

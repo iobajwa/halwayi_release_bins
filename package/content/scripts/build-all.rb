@@ -412,17 +412,17 @@ targets.each_pair { |tname, tmeta|
 	total_time           += target_total_build_time
 }
 
-targets.each_pair { |tname, tmeta|
-	if tmeta[:features_failed].length > 0 or tmeta[:features_timedout].length > 0
-		puts "", "#{tname}:"
-		tmeta[:features_failed].each   { |f| puts "  #{t}" }
-		tmeta[:features_timedout].each { |f| puts "  #{t} (TIMEDOUT)" }
-	end
-}
-
 # print summary
 puts ""
 puts "summary:"
+targets.each_pair { |tname, tmeta|
+	if tmeta[:features_failed].length > 0 or tmeta[:features_timedout].length > 0
+		puts "", "  #{tname} failures:"
+		tmeta[:features_failed].each   { |f| puts "    - #{f}" }
+		tmeta[:features_timedout].each { |f| puts "    - #{f} (TIMEDOUT)" }
+		puts ""
+	end
+}
 puts "  total: #{total_build_count}  succeeded: #{total_passed_count}  failed: #{total_failed_count}  timedout: #{total_timedout_count}"
 puts "  took #{"%.3f" % total_time} seconds"
 puts ""

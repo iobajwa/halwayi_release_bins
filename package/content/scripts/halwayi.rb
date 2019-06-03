@@ -112,11 +112,10 @@ class Halwayi
 		targets = Halwayi.targets
 		return nil unless targets.include?(target_name)
 		
-		vp_config       = targets[target_name][:vp_config]
 		image_name      = Halwayi.project_name  unless image_name
 		image_extension = "." + image_extension unless image_extension.start_with?(".")
 		
-		return File.join @bin_root, "features", feature_name, build_type, vp_config, "#{image_name}#{image_extension}"
+		return File.join @bin_root, "features", feature_name, build_type, target_name, "#{image_name}#{image_extension}"
 	end
 	def Halwayi.parse_variant_platform(str) return str.split('+').map(&:strip); end
 	def Halwayi.get_fwver

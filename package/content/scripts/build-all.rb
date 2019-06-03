@@ -352,7 +352,7 @@ targets.each_pair { |tname, tmeta|
 
 		feature_name_transformed = tname + '.' + feature_name.gsub('/', '.') + ".build-output.txt"
 		output_file = File.join output_path, feature_name_transformed
-		puts "", "    building : #{feature_name}"
+		puts "", "    building : #{feature_name}    ( #{tname} )"
 		puts "    output   : #{output_file}", ""
 
 		exit_code  = build_result = nil

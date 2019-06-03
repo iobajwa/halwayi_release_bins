@@ -535,7 +535,8 @@ deploy_bundles.each_pair { |bundle_name, bmeta|
 
 
 # copy each image to it's unique folder
-file_counter = 0
+file_counter  = 0
+asset_counter = 0
 deploy_bundles.each_pair { |bundle_name, bundle_meta|
 
 	bundle_deploy_path = bundle_meta[:deploy_path]
@@ -571,22 +572,30 @@ deploy_bundles.each_pair { |bundle_name, bundle_meta|
 		bundle_meta[:assets][:dirs].each { |meta| 
 			source         = meta[:full_path]
 			destination    = meta[:destination]
+			relative_path  = meta[:relative_path]
 			dest_path_root = File.join bundle_deploy_path, "assets"
-			dest_path      = File.join dest_path_root, destination
+			dest_path      = File.join dest_path_root, relative_path
 
 			FileUtils.mkdir_p dest_path_root
-			FileUtils.cp_r source, dest_path
+			FileUtils.mkdir_p dest_path
+			FileUtils.cp_r    source, dest_path
+			
+			puts "deployed '#{source}' to '#{dest_path}'" if verbose
+			asset_counter += 1
 		}
 		bundle_meta[:assets][:files].each { |meta| 
 			source          = meta[:full_path]
 			destination     = meta[:destination]
 			relative_path   = meta[:relative_path]
 			dest_path_root  = File.join bundle_deploy_path, "assets"
-			destination_dir = File.join dest_path_root, relative_path
-			dest_path       = File.join destination_dir, destination
+			dest_path       = File.join dest_path_root, relative_path
 
-			FileUtils.mkpath destination_dir
-			FileUtils.cp source, dest_path
+			FileUtils.mkdir_p dest_path_root
+			FileUtils.mkdir_p dest_path
+			FileUtils.cp      source, dest_path
+
+			puts "deployed '#{source}' to '#{dest_path}'" if verbose
+			asset_counter += 1
 		}
 	end
 }

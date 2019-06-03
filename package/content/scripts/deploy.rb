@@ -292,9 +292,6 @@ user_meta.each_pair { |bundle_name, bundle_meta|
 	applicable_version = global_version if applicable_version == nil || forced_version
 	applicable_version = applicable_version.to_s
 
-	# ensure we have some assets
-	assets = {} if assets[:dirs] == [] and assets[:files] == []
-
 	deploy_bundles[bundle_name] = { version: applicable_version, images: images_for_all_targets, assets: assets }
 }
 

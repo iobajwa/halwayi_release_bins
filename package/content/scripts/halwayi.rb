@@ -118,10 +118,13 @@ class Halwayi
 		return File.join @bin_root, "features", feature_name, build_type, target_name, "#{image_name}#{image_extension}"
 	end
 	def Halwayi.parse_variant_platform(str) return str.split('+').map(&:strip); end
-	def Halwayi.get_fwver
+	def Halwayi.get_fwver(without_target_name=false)
 		raw_output = string_to_lines `fwver`
 		output = raw_output[1]
-		output.strip if output
+		if output
+			output.strip!
+			output = output[output.index('/')+1..-1] if without_target_name and output.include?('/')
+		end
 		return output
 	end
 end

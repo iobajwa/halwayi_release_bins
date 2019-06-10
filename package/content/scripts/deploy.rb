@@ -170,7 +170,7 @@ rescue Exception => e
 	error e.message
 end
 user_meta = { "default-bundle" => user_meta } if user_meta.class != Hash   # the bundle file may simply be just a list of feature names
-global_version = sanitize_sting_meta user_meta["version"], Halwayi.get_fwver
+global_version = sanitize_sting_meta user_meta["version"], Halwayi.get_fwver(true)
 global_version = forced_version if forced_version
 global_formats = sanitize_array_meta user_meta["formats"]
 global_targets = sanitize_array_meta user_meta["targets"]

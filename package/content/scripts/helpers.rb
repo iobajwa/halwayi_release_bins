@@ -39,3 +39,4 @@ def get_dirs path
 	dirs.push path
 end
 def string_to_lines(raw) raw.gsub("\r\n","\n").split("\n").map(&:strip) end
+def is_windows?() return RUBY_PLATFORM.include? "mingw" end

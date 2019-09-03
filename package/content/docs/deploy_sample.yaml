@@ -4,13 +4,18 @@ targets: machine1, machine2
 formats: hex, elf, map
 # bins_root: bin
 
+build_command: default_global_release_command   # is applied when no release_command is defined at local scope
+target_aliases:
+  target1: target2, target3
+
 production:
   targets: machine1
-  - name/spaced/feature1 > feature1
+  - name/spaced/feature1 > feature1 = fancy_release_command
   - feature2:
       source: name/spaced/feature2
       destination: altered-namespace/feature2
       targets: machine2
+      build_command: fancy_release_command
   - adc
 
 board_bring_up:
@@ -21,6 +26,7 @@ board_bring_up:
     - demo1:
         destination: new/namespace/demo1
         targets: machine2
+        build_command: demo1_release_command
     - demo2:
         destination: new/namespace/demo2
         targets: machine2

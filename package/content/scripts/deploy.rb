@@ -47,6 +47,22 @@ def sanitize_array_meta meta
 	return parse_array_from_string meta if meta.class == String
 	return meta
 end
+def parse_dict_from_hash(meta, default_value={})
+	return default_value if meta == nil or meta.class != Hash
+	result = {}
+	meta.each_pair { |okey, aliases| 
+		aliases_array = parse_array_from_string aliases
+		result[okey] = aliases_array
+	}
+
+	return result
+end
+def find_real_target target_aliases, target_name
+	target_aliases.each_pair { |t_parent, t_aliases|
+		return t_parent if t_aliases.include?(target_name)
+	}
+	return target_name
+end
 def create_shell_script task, bundle_name, bundle_meta, temp_script_root, batch_file_prefix=nil
 	batch_file_contents = []
 	batch_file_contents.push "
@@ -57,7 +73,7 @@ def create_shell_script task, bundle_name, bundle_meta, temp_script_root, batch_
 	bundle_meta.each_pair { |tname, bins|
 		bins.each { |bin_meta|
 			bin_name = bin_meta[:source]
-			command  = "call #{task} #{bin_name} target #{tname}"
+			command  = "call #{bin_meta[:build_command]} #{bin_name} target #{tname}"
 			batch_file_contents.push command , "if errorlevel 1 goto out", ""
 		}
 	}
@@ -83,17 +99,29 @@ def delete_shell_script task, bundle_name, temp_script_root, batch_file_prefix=n
 	end
 	return nil
 end
-def parse_source_destination raw
+def parse_source_destination_build_command raw, default_build_command
 	if raw =~ /\s*(.*?)\s*>\s*(.*)\s*/
-		source = $~[1].strip
-		destination = $~[2]
+		source      = $~[1].strip
+		destination = $~[2].strip
 		destination = destination ? destination.strip : source
 		source      = source.lrchomp('/').lrchomp('\\')
 		destination = destination.lrchomp('/').lrchomp('\\')
-		return source, destination
+		command     = nil
+		if destination =~ /\s*(.*?)\s*=\s*(.*)\s*/
+			destination = $~[1].strip
+			command     = $~[2].strip
+		end
+		command = default_build_command unless command
+		return source, destination, command
 	end
 	raw = raw.rchomp('/').chomp('/').rchomp('\\').chomp('\\')
-	return raw, raw
+	command = nil
+	if raw =~ /\s*(.*?)\s*=\s*(.*)\s*/
+		raw = $~[1].strip
+		command = $~[2].strip
+	end
+	command = default_build_command unless command
+	return raw, raw, command
 end
 
 
@@ -145,8 +173,8 @@ unless deploy_path
 	FileUtils.mkdir_p deploy_path unless Dir.exists? deploy_path
 end
 # ensure the paths exist
-error "path doesn't exist: '#{deploy_path}'"                    unless Dir.exist?  deploy_path
-error "bundles.yaml not found in MagicRoot ('#{magic_root}')."  unless File.exist? deploy_file
+error "path doesn't exist: '#{deploy_path}'"                   unless Dir.exist?  deploy_path
+error "bundles.yaml not found in MagicRoot ('#{magic_root}')." unless File.exist? deploy_file
 # sanitize
 deploy_path = deploy_path.gsub('\\', '/')
 
@@ -170,15 +198,19 @@ rescue Exception => e
 	error e.message
 end
 user_meta = { "default-bundle" => user_meta } if user_meta.class != Hash   # the bundle file may simply be just a list of feature names
-global_version = sanitize_sting_meta user_meta["version"], Halwayi.get_fwver(true)
-global_version = forced_version if forced_version
-global_formats = sanitize_array_meta user_meta["formats"]
-global_targets = sanitize_array_meta user_meta["targets"]
-global_targets = Halwayi.target_names unless global_targets
-global_formats = [".hex"] if global_formats == nil or global_formats.length == 0
-deploy_bundles = {}
-project_target_names = Halwayi.target_names
-known_meta = ["targets", "formats", "version"]
+global_version        = sanitize_sting_meta user_meta["version"], Halwayi.get_fwver(true)
+global_version        = forced_version if forced_version
+global_formats        = sanitize_array_meta user_meta["formats"]
+global_targets        = sanitize_array_meta user_meta["targets"]
+global_target_aliases = parse_dict_from_hash( sanitize_array_meta user_meta["target_aliases"] )
+global_target_aliases = {} if global_target_aliases == nil or global_target_aliases.class != Hash
+global_build_command  = sanitize_sting_meta user_meta["build_command"]
+global_build_command  = "build"              unless global_build_command
+global_targets        = Halwayi.target_names unless global_targets
+global_formats        = [".hex"]             if     global_formats == nil or global_formats.length == 0
+deploy_bundles        = {}
+project_target_names  = Halwayi.target_names
+known_meta = ["targets", "formats", "version", "build_command", "target_aliases"]
 
 user_meta.each_pair { |bundle_name, bundle_meta|
 	next if known_meta.include? bundle_name
@@ -196,16 +228,21 @@ user_meta.each_pair { |bundle_name, bundle_meta|
 		# parse each entry, create a bin list
 		# and assume we'll bundle these binaries for each global_target
 		bundle_meta.each { |b|
-			source, destination = parse_source_destination b
-			bins.push( { source: source, destination: destination, formats: global_formats } )
+			source, destination, build_command = parse_source_destination_build_command b, global_build_command
+			bins.push( { source: source, destination: destination, build_command: build_command, formats: global_formats } )
 		}
 		global_targets.each { |t|  images_for_all_targets[t] = { bins: bins } }
 
 	elsif bundle_meta.class == Hash
 
 		# we have a more detailed description
-		local_formats = sanitize_array_meta bundle_meta["formats"]
-		local_targets = sanitize_array_meta bundle_meta["targets"]
+		local_formats        = sanitize_array_meta bundle_meta["formats"]
+		local_targets        = sanitize_array_meta bundle_meta["targets"]
+		local_build_command  = sanitize_sting_meta bundle_meta["build_command"]
+		local_build_command  = global_build_command  unless local_build_command
+		# local_target_aliases = parse_dict_from_hash  bundle_meta["target_aliases"]
+		# local_target_aliases = global_target_aliases if local_target_aliases == {}
+		local_target_aliases = global_target_aliases
 		bundle_bins   = bundle_meta["bins"]
 		bundle_assets = bundle_meta["assets"]
 		error "'#{bundle_name}' bundle: no bins and assets listed" if bundle_bins == nil and bundle_assets == nil
@@ -214,23 +251,23 @@ user_meta.each_pair { |bundle_name, bundle_meta|
 		# parse bundle assets
 		bundle_assets.each { |a|
 
-			source, destination = parse_source_destination a
+			source, destination, build_command = parse_source_destination_build_command a, local_build_command
 			full_path     = File.join project_root, source
 			category      = File.directory?(full_path) ? :dirs : :files
 			relative_path = File.dirname destination
-			assets[category].push( { source: source, destination: destination, relative_path: relative_path, full_path: full_path } )
+			build_command = local_build_command unless build_command
+			assets[category].push( { source: source, destination: destination, build_command: build_command, relative_path: relative_path, full_path: full_path } )
 
 		} if bundle_assets
-
 
 		# parse bundle bins
 		bundle_bins.each { |b|
 
-			applicable_targets = local_targets
-			applicable_targets = global_targets unless applicable_targets
-			applicable_formats = local_formats
-			applicable_formats = global_formats if local_formats == nil || local_formats.length == 0
-
+			applicable_targets       = local_targets
+			applicable_targets       = global_targets unless applicable_targets
+			applicable_formats       = local_formats
+			applicable_formats       = global_formats if local_formats == nil || local_formats.length == 0
+			applicable_build_command = local_build_command
 			if b.class == Hash
 				source = b.keys[0]
 				# figure out the variant+platform configuration
@@ -247,21 +284,24 @@ user_meta.each_pair { |bundle_name, bundle_meta|
 				elsif v.class == Hash
 					i_targets    = sanitize_array_meta v["targets"]
 					i_formats    = sanitize_array_meta v["formats"]
+					i_b_command  = sanitize_array_meta v["build_command"]
 					source_t     = v["source"]
 					destination  = v["destination"]
 					source_t     = source_t.lrchomp('/').lrchomp('\\') if source_t
 					destination  = destination.lrchomp('/').lrchomp('\\') if destination
 					source       = source_t  if     source_t
 					destination  = source    unless destination
-					applicable_formats = i_formats  if i_formats and i_formats.length > 0
-					applicable_targets = i_targets  if i_targets
+					applicable_formats       = i_formats   if i_formats and i_formats.length > 0
+					applicable_targets       = i_targets   if i_targets
+					applicable_build_command = i_b_command if i_b_command
 				elsif v.class == Array
-					puts "#{v.class}"
 					error "'#{bundle_name}.#{source}' invalid meta '#{v}'"
 				end
 			else
-				source, destination = parse_source_destination b
+				source, destination, build_command = parse_source_destination_build_command b, applicable_build_command
 			end
+
+			applicable_target_aliases = local_target_aliases
 
 			# ensure all formats begin with '.'
 			t = []
@@ -273,7 +313,7 @@ user_meta.each_pair { |bundle_name, bundle_meta|
 			applicable_targets.each { |t| error "#{bundle_name}.#{source}: unknown target (#{t})" unless project_target_names.include?(t) }
 
 			# we now have a bin meta
-			bin_meta = { source: source, destination: destination, formats: applicable_formats }
+			bin_meta = { source: source, destination: destination, build_command: build_command, formats: applicable_formats }
 
 			# append this to all applicable_targets
 			applicable_targets.each { |t|  
@@ -281,6 +321,12 @@ user_meta.each_pair { |bundle_name, bundle_meta|
 				bin_array = [] unless bin_array
 				bin_array.push bin_meta.clone
 				images_for_all_targets[t] = bin_array
+
+				# also to target aliases
+				next unless applicable_target_aliases[t]
+				applicable_target_aliases[t].each { |at|
+					images_for_all_targets[at] = bin_array
+				}
 			}
 
 		} if bundle_bins
@@ -311,7 +357,8 @@ end
 # ensure that the features names make sense
 deploy_bundles.each_pair { |bname, bmeta|
 	bmeta[:images].each_pair { |tname, bins| 
-		target_features = Halwayi.features tname
+		real_target = find_real_target global_target_aliases, tname
+		target_features = Halwayi.features real_target
 		bins.each { |bin_meta|
 			feature_name = bin_meta[:source]
 			error "#{bname}.#{tname}: '#{feature_name}' feature doesn't exist for the target" unless target_features.include?(feature_name)
@@ -322,6 +369,7 @@ deploy_bundles.each_pair { |bname, bmeta|
 
 error "nothing to do." if deploy_bundles.length == 0    # sanity check
 
+
 # figure out paths for each target binary
 deploy_bundles.each_pair { |bundle_name, bundle_meta|
 	bundle_meta[:images].each_pair { |tname, bins|
@@ -331,9 +379,10 @@ deploy_bundles.each_pair { |bundle_name, bundle_meta|
 			bin_name    = bin_meta[:source]
 			destination = bin_meta[:destination]
 			destination = bin_name unless destination
+			real_target = find_real_target(global_target_aliases, tname)
 
-			r_path             = "#{bin_name}/release/#{tname}"
-			r_destination_path = "#{destination}/release/#{tname}"
+			r_path             = "#{bin_name}/release/#{real_target}"
+			r_destination_path = "#{destination}/release/#{real_target}"
 			full_path          = File.join b_path, r_path
 
 			bin_meta[:full_path]                 = full_path
@@ -392,6 +441,7 @@ end
 # ensure all the requested bins and assets exist
 bundles_with_missing_bins   = {}
 bundles_with_missing_assets = {}
+missing_bins_list           = []
 deploy_bundles.each_pair { |bundle_name, bmeta|
 
 	assets = bmeta[:assets]
@@ -414,14 +464,15 @@ deploy_bundles.each_pair { |bundle_name, bmeta|
 
 	bmeta[:images].each_pair { |tname, bins| 
 
-		bins_exist, assets_exit = true, true
+		bins_exist = true
+		next if find_real_target(global_target_aliases, tname) != tname   # make sure we only test for real targets (not aliases)
 
 		bins.each { |bin_meta|
 
 			feature_name = bin_meta[:full_path]
 			unless Dir.exist? feature_name
 				bins_exist = false
-				break
+				missing_bins_list.push "#{bundle_name} : #{feature_name}"
 			end
 		}
 
@@ -437,6 +488,7 @@ if bundles_with_missing_bins.length > 0
 	script_name.chomp!(' / ')
 	error_log "Could not locate all binaries needed for deployment."
 	error_log "Use '#{script_name}' to build the needed binaries."
+	error_log missing_bins_list if verbose
 end
 if bundles_with_missing_assets.length > 0
 	bundle_names = ""

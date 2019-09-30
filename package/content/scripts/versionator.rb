@@ -43,9 +43,15 @@ unless fw_version
 	# create a version string
 	branch_name   = `git rev-parse --abbrev-ref HEAD`.strip.gsub(/\s+/, '-')
 	commit_number = `git rev-parse --verify HEAD`.strip
+	changeset     = `git ls-files -m`.strip
+	commit_number = commit_number[0...7]
+	commit_number = "~#{commit_number}" if changeset and changeset != ""
 	dev_name      = `git config user.name`.strip unless dev_name
 	dev_name      = dev_name.gsub(/\s+/, '-').downcase
-	fw_version    = "#{branch_name}/#{commit_number[0...7]}/#{dev_name}"
+	fw_version    = "#{branch_name}/#{commit_number}/#{dev_name}"
+else
+	changeset  = `git ls-files -m`.strip
+	fw_version = "#{fw_version}~" if changeset and changeset != ""
 end
 
 fw_version  = "#{target}/#{fw_version}"

@@ -84,6 +84,9 @@ call load_environment
 if ["%target%"] NEQ [""] (
 	echo '%target%' target..
 	set target_chosen=target "%target%"
+) else (
+	echo which target?
+	goto abort_script
 )
 if ["%feature_file%"] NEQ [""] (
 	echo '%FeatureName%' feature..
@@ -107,7 +110,7 @@ if errorlevel 1 (
 )
 
 	
-	rem exit if cannot (or not asked to) flash
+	rem exit if cannot, or not asked to, flash
 if [%clean%]==[true]	goto exit_script
 if [%program%]==[false]	goto exit_script
 

@@ -82,6 +82,9 @@ pushd "%CD%"
 if ["%target%"] NEQ [""] (
 	echo '%target%' target..
 	set selected_target=target "%target%"
+) else (
+	echo which target?
+	goto exit_script
 )
 
 if ["%glob%"]==[""] (

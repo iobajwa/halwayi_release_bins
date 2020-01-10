@@ -13,6 +13,9 @@
 
       FeatureFiles: Used to determine source files that must be included in this feature. User needs to provide 
                      'CustomNativeFiles' and 'CustomGhostFiles' items.
+
+      FeaturePaths: Used to append paths that must be included in this feature. User needs to provide 'FeatureSourceFolders',
+                     'FeatureNativeSourceFolders', 'FeatureGhostSourceFolders'
     
 	************************************************************************************************************************
 	-->
@@ -40,7 +43,12 @@
                             _ParseIncludedFiles;
                             _SetupPropertiesForcstub;
                             _GenerateStubsForFeature;
-                            _InjectGeneratedFilesAndPaths;">
+                            _InjectGeneratedFilesAndPaths;
+                            FeaturePaths;
+                            _ResolveFeatureInjectedPaths;
+                            _CheckFeaturePaths;
+                            _InjectFeaturePaths;
+                            ">
   </Target>
 
   <Target Name= "FeaturePropertiesLauncher" AfterTargets= "_BeforeBuild" DependsOnTargets="FeatureProperties" />
@@ -107,6 +115,80 @@
       <_AllNativeIncludedPaths>$(CStubNativeRoot);$(_AllNativeIncludedPaths)</_AllNativeIncludedPaths>
     </PropertyGroup>
   </Target>
+
+
+
+  <Target Name="_ResolveFeatureInjectedPaths">
+    
+    <RelativeToAbsolutePathsTask PathsToCheck= "@(FeatureSourceFolders)" Root= "$(ProjectRoot)">
+      <Output ItemName= "__Temp1" TaskParameter= "ConvertedPathsItem" />
+    </RelativeToAbsolutePathsTask>
+
+    <RelativeToAbsolutePathsTask PathsToCheck= "@(FeatureNativeSourceFolders)" Root= "$(ProjectRoot)">
+      <Output ItemName= "__Temp2" TaskParameter= "ConvertedPathsItem" />
+    </RelativeToAbsolutePathsTask>
+
+    <RelativeToAbsolutePathsTask PathsToCheck= "@(FeatureGhostSourceFolders)" Root= "$(ProjectRoot)">
+      <Output ItemName= "__Temp3" TaskParameter= "ConvertedPathsItem" />
+    </RelativeToAbsolutePathsTask>
+
+    <ItemGroup>
+      <FeatureSourceFolders Remove="%(FeatureSourceFolders.Identity)" />
+      <FeatureSourceFolders Include="%(__Temp1.Identity)" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <FeatureNativeSourceFolders Remove="%(FeatureNativeSourceFolders.Identity)" />
+      <FeatureNativeSourceFolders Include="%(__Temp1.Identity)" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <RelativeToAbsolutePathsTask Remove="%(RelativeToAbsolutePathsTask.Identity)" />
+      <RelativeToAbsolutePathsTask Include="%(__Temp1.Identity)" />
+    </ItemGroup>
+
+    <!-- <Error Text="@(FeatureSourceFolders), @(FeatureNativeSourceFolders), @(FeatureGhostSourceFolders)" /> -->
+
+  </Target>
+
+
+
+  <Target Name="_CheckFeaturePaths" DependsOnTargets="_CheckFeaturePathsFolders;_CheckFeatureNativePathsFolders;_CheckFeatureGhostPathsFolders">
+  </Target>
+
+
+
+  <Target Name= "_CheckFeaturePathsFolders" Outputs= "%(FeatureSourceFolders.Identity)" Condition= " '@(FeatureSourceFolders->Count())' &gt; 1 ">
+    <Error Text= "Source Path '%(FeatureSourceFolders.Identity)' does not exists." Condition= "!Exists(%(FeatureSourceFolders.Identity)) AND $([System.String]::IsNullOrEmpty('%(FeatureSourceFolders.Identity)')) == 'false'" />
+  </Target>
+
+  <Target Name= "_CheckFeatureNativePathsFolders" Outputs= "%(FeatureNativeSourceFolders.Identity)" Condition= " '@(FeatureNativeSourceFolders->Count())' &gt; 1 ">
+    <Error Text= "Source Path '%(FeatureNativeSourceFolders.Identity)' does not exists." Condition= "!Exists(%(FeatureNativeSourceFolders.Identity)) AND $([System.String]::IsNullOrEmpty('%(FeatureNativeSourceFolders.Identity)')) == 'false'" />
+  </Target>
+
+  <Target Name= "_CheckFeatureGhostPathsFolders" Outputs= "%(FeatureGhostSourceFolders.Identity)" Condition= " '@(FeatureGhostSourceFolders->Count())' &gt; 1 ">
+    <Error Text= "Source Path '%(FeatureGhostSourceFolders.Identity)' does not exists." Condition= "!Exists(%(FeatureGhostSourceFolders.Identity)) AND $([System.String]::IsNullOrEmpty('%(FeatureGhostSourceFolders.Identity)')) == 'false'" />
+  </Target>
+
+
+
+  <Target Name="_InjectFeaturePaths">
+    <ItemGroup>
+      <!-- Folder preference order:
+            - Native Source Folders
+            - Source Folders
+            - Include Folders
+      -->
+      <NativeIncludedPathsItem Include= "@(FeatureNativeSourceFolders)" />
+      <_GhostAllIncludedPathItem Include= "@(FeatureGhostSourceFolders) "/>
+    </ItemGroup>
+
+    <PropertyGroup>
+      <_AllNativeIncludedPaths>$(_AllNativeIncludedPaths);@(NativeIncludedPathsItem)</_AllNativeIncludedPaths>
+      <_AllGhostIncludedPaths>$(_AllGhostIncludedPaths);@(GhostIncludedPathsItem)</_AllGhostIncludedPaths>
+    </PropertyGroup>
+  </Target>
+
 
 
 </Project>

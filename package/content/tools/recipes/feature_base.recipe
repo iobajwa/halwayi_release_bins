@@ -139,12 +139,12 @@
 
     <ItemGroup>
       <FeatureNativeSourceFolders Remove="%(FeatureNativeSourceFolders.Identity)" />
-      <FeatureNativeSourceFolders Include="%(__Temp1.Identity)" />
+      <FeatureNativeSourceFolders Include="%(__Temp2.Identity)" />
     </ItemGroup>
 
     <ItemGroup>
       <RelativeToAbsolutePathsTask Remove="%(RelativeToAbsolutePathsTask.Identity)" />
-      <RelativeToAbsolutePathsTask Include="%(__Temp1.Identity)" />
+      <RelativeToAbsolutePathsTask Include="%(__Temp3.Identity)" />
     </ItemGroup>
 
     <!-- <Error Text="@(FeatureSourceFolders), @(FeatureNativeSourceFolders), @(FeatureGhostSourceFolders)" /> -->

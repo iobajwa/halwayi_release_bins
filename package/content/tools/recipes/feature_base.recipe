@@ -132,6 +132,19 @@
       <Output ItemName= "__Temp3" TaskParameter= "ConvertedPathsItem" />
     </RelativeToAbsolutePathsTask>
 
+    <RelativeToAbsolutePathsTask PathsToCheck= "@(FeatureSourceFoldersPrivate)" Root= "$(ProjectRoot)">
+      <Output ItemName= "__Temp10" TaskParameter= "ConvertedPathsItem" />
+    </RelativeToAbsolutePathsTask>
+
+    <RelativeToAbsolutePathsTask PathsToCheck= "@(FeatureNativeSourceFoldersPrivate)" Root= "$(ProjectRoot)">
+      <Output ItemName= "__Temp20" TaskParameter= "ConvertedPathsItem" />
+    </RelativeToAbsolutePathsTask>
+
+    <RelativeToAbsolutePathsTask PathsToCheck= "@(FeatureGhostSourceFoldersPrivate)" Root= "$(ProjectRoot)">
+      <Output ItemName= "__Temp30" TaskParameter= "ConvertedPathsItem" />
+    </RelativeToAbsolutePathsTask>
+
+
     <ItemGroup>
       <FeatureSourceFolders Remove="%(FeatureSourceFolders.Identity)" />
       <FeatureSourceFolders Include="%(__Temp1.Identity)" />
@@ -143,8 +156,36 @@
     </ItemGroup>
 
     <ItemGroup>
-      <RelativeToAbsolutePathsTask Remove="%(RelativeToAbsolutePathsTask.Identity)" />
+      <RelativeToAbsolutePathsTask Remove="%(FeatureGhostSourceFolders.Identity)" />
       <RelativeToAbsolutePathsTask Include="%(__Temp3.Identity)" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <FeatureSourceFolders Remove="%(FeatureSourceFoldersPrivate.Identity)" />
+      <FeatureSourceFolders Include="%(__Temp10.Identity)" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <FeatureNativeSourceFolders Remove="%(FeatureNativeSourceFoldersPrivate.Identity)" />
+      <FeatureNativeSourceFolders Include="%(__Temp20.Identity)" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <RelativeToAbsolutePathsTask Remove="%(FeatureGhostSourceFoldersPrivate.Identity)" />
+      <RelativeToAbsolutePathsTask Include="%(__Temp30.Identity)" />
+    </ItemGroup>
+
+
+    <ItemGroup>
+      <!-- Folder preference order:
+            - Native Source Folders
+            - Source Folders
+            - Include Folders
+      -->
+      <FeatureNativeSourceFolders Include= "@(FeatureSourceFoldersPrivate)"/>
+      <FeatureNativeSourceFolders Include= "@(FeatureNativeSourceFoldersPrivate)"/>
+      <FeatureGhostSourceFolders Include= "@(FeatureSourceFoldersPrivate)"/>
+      <FeatureGhostSourceFolders Include= "@(FeatureGhostSourceFoldersPrivate) "/>
     </ItemGroup>
 
     <!-- <Error Text="@(FeatureSourceFolders), @(FeatureNativeSourceFolders), @(FeatureGhostSourceFolders)" /> -->
@@ -153,7 +194,8 @@
 
 
 
-  <Target Name="_CheckFeaturePaths" DependsOnTargets="_CheckFeaturePathsFolders;_CheckFeatureNativePathsFolders;_CheckFeatureGhostPathsFolders">
+  <Target Name="_CheckFeaturePaths" DependsOnTargets="_CheckFeaturePathsFoldersPrivate;_CheckFeatureNativePathsFoldersPrivate;_CheckFeatureGhostPathsFoldersPrivate;
+                                                      _CheckFeaturePathsFolders;_CheckFeatureNativePathsFolders;_CheckFeatureGhostPathsFolders;">
   </Target>
 
 
@@ -163,13 +205,24 @@
   </Target>
 
   <Target Name= "_CheckFeatureNativePathsFolders" Outputs= "%(FeatureNativeSourceFolders.Identity)" Condition= " '@(FeatureNativeSourceFolders->Count())' &gt; 1 ">
-    <Error Text= "Source Path '%(FeatureNativeSourceFolders.Identity)' does not exists." Condition= "!Exists(%(FeatureNativeSourceFolders.Identity)) AND $([System.String]::IsNullOrEmpty('%(FeatureNativeSourceFolders.Identity)')) == 'false'" />
+    <Error Text= "Source Path (native) '%(FeatureNativeSourceFolders.Identity)' does not exists." Condition= "!Exists(%(FeatureNativeSourceFolders.Identity)) AND $([System.String]::IsNullOrEmpty('%(FeatureNativeSourceFolders.Identity)')) == 'false'" />
   </Target>
 
   <Target Name= "_CheckFeatureGhostPathsFolders" Outputs= "%(FeatureGhostSourceFolders.Identity)" Condition= " '@(FeatureGhostSourceFolders->Count())' &gt; 1 ">
-    <Error Text= "Source Path '%(FeatureGhostSourceFolders.Identity)' does not exists." Condition= "!Exists(%(FeatureGhostSourceFolders.Identity)) AND $([System.String]::IsNullOrEmpty('%(FeatureGhostSourceFolders.Identity)')) == 'false'" />
+    <Error Text= "Source Path (ghost) '%(FeatureGhostSourceFolders.Identity)' does not exists." Condition= "!Exists(%(FeatureGhostSourceFolders.Identity)) AND $([System.String]::IsNullOrEmpty('%(FeatureGhostSourceFolders.Identity)')) == 'false'" />
   </Target>
 
+  <Target Name= "_CheckFeaturePathsFoldersPrivate" Outputs= "%(FeatureSourceFoldersPrivate.Identity)" Condition= " '@(FeatureSourceFoldersPrivate->Count())' &gt; 1 ">
+    <Error Text= "Source Path (private) '%(FeatureSourceFoldersPrivate.Identity)' does not exists." Condition= "!Exists(%(FeatureSourceFoldersPrivate.Identity)) AND $([System.String]::IsNullOrEmpty('%(FeatureSourceFoldersPrivate.Identity)')) == 'false'" />
+  </Target>
+
+  <Target Name= "_CheckFeatureNativePathsFoldersPrivate" Outputs= "%(FeatureNativeSourceFoldersPrivate.Identity)" Condition= " '@(FeatureNativeSourceFoldersPrivate->Count())' &gt; 1 ">
+    <Error Text= "Source Path (native, private) '%(FeatureNativeSourceFoldersPrivate.Identity)' does not exists." Condition= "!Exists(%(FeatureNativeSourceFoldersPrivate.Identity)) AND $([System.String]::IsNullOrEmpty('%(FeatureNativeSourceFoldersPrivate.Identity)')) == 'false'" />
+  </Target>
+
+  <Target Name= "_CheckFeatureGhostPathsFoldersPrivate" Outputs= "%(FeatureGhostSourceFoldersPrivate.Identity)" Condition= " '@(FeatureGhostSourceFoldersPrivate->Count())' &gt; 1 ">
+    <Error Text= "Source Path (ghost, private) '%(FeatureGhostSourceFoldersPrivate.Identity)' does not exists." Condition= "!Exists(%(FeatureGhostSourceFoldersPrivate.Identity)) AND $([System.String]::IsNullOrEmpty('%(FeatureGhostSourceFoldersPrivate.Identity)')) == 'false'" />
+  </Target>
 
 
   <Target Name="_InjectFeaturePaths">

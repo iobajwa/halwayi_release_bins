@@ -120,6 +120,31 @@
 
   <Target Name="_ResolveFeatureInjectedPaths">
     
+    <RelativeToAbsolutePathsTask PathsToCheck= "@(FeatureTopSourceFolders)" Root= "$(ProjectRoot)">
+      <Output ItemName= "__Temp_1" TaskParameter= "ConvertedPathsItem" />
+    </RelativeToAbsolutePathsTask>
+
+    <RelativeToAbsolutePathsTask PathsToCheck= "@(FeatureTopNativeSourceFolders)" Root= "$(ProjectRoot)">
+      <Output ItemName= "__Temp_2" TaskParameter= "ConvertedPathsItem" />
+    </RelativeToAbsolutePathsTask>
+
+    <RelativeToAbsolutePathsTask PathsToCheck= "@(FeatureTopGhostSourceFolders)" Root= "$(ProjectRoot)">
+      <Output ItemName= "__Temp_3" TaskParameter= "ConvertedPathsItem" />
+    </RelativeToAbsolutePathsTask>
+
+    <RelativeToAbsolutePathsTask PathsToCheck= "@(FeatureTopSourceFoldersPrivate)" Root= "$(ProjectRoot)">
+      <Output ItemName= "__Temp_10" TaskParameter= "ConvertedPathsItem" />
+    </RelativeToAbsolutePathsTask>
+
+    <RelativeToAbsolutePathsTask PathsToCheck= "@(FeatureTopNativeSourceFoldersPrivate)" Root= "$(ProjectRoot)">
+      <Output ItemName= "__Temp_20" TaskParameter= "ConvertedPathsItem" />
+    </RelativeToAbsolutePathsTask>
+
+    <RelativeToAbsolutePathsTask PathsToCheck= "@(FeatureTopGhostSourceFoldersPrivate)" Root= "$(ProjectRoot)">
+      <Output ItemName= "__Temp_30" TaskParameter= "ConvertedPathsItem" />
+    </RelativeToAbsolutePathsTask>
+
+
     <RelativeToAbsolutePathsTask PathsToCheck= "@(FeatureSourceFolders)" Root= "$(ProjectRoot)">
       <Output ItemName= "__Temp1" TaskParameter= "ConvertedPathsItem" />
     </RelativeToAbsolutePathsTask>
@@ -145,6 +170,38 @@
     </RelativeToAbsolutePathsTask>
 
 
+
+    <ItemGroup>
+      <FeatureTopSourceFolders Remove="%(FeatureTopSourceFolders.Identity)" />
+      <FeatureTopSourceFolders Include="%(__Temp_1.Identity)" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <FeatureTopNativeSourceFolders Remove="%(FeatureTopNativeSourceFolders.Identity)" />
+      <FeatureTopNativeSourceFolders Include="%(__Temp_2.Identity)" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <FeatureTopGhostSourceFolders Remove="%(FeatureTopGhostSourceFolders.Identity)" />
+      <FeatureTopGhostSourceFolders Include="%(__Temp_3.Identity)" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <FeatureTopSourceFoldersPrivate Remove="%(FeatureTopSourceFoldersPrivate.Identity)" />
+      <FeatureTopSourceFoldersPrivate Include="%(__Temp_10.Identity)" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <FeatureTopNativeSourceFoldersPrivate Remove="%(FeatureTopNativeSourceFoldersPrivate.Identity)" />
+      <FeatureTopNativeSourceFoldersPrivate Include="%(__Temp_20.Identity)" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <FeatureTopGhostSourceFoldersPrivate Remove="%(FeatureTopGhostSourceFoldersPrivate.Identity)" />
+      <FeatureTopGhostSourceFoldersPrivate Include="%(__Temp_30.Identity)" />
+    </ItemGroup>
+
+
     <ItemGroup>
       <FeatureSourceFolders Remove="%(FeatureSourceFolders.Identity)" />
       <FeatureSourceFolders Include="%(__Temp1.Identity)" />
@@ -156,8 +213,8 @@
     </ItemGroup>
 
     <ItemGroup>
-      <RelativeToAbsolutePathsTask Remove="%(FeatureGhostSourceFolders.Identity)" />
-      <RelativeToAbsolutePathsTask Include="%(__Temp3.Identity)" />
+      <FeatureGhostSourceFolders Remove="%(FeatureGhostSourceFolders.Identity)" />
+      <FeatureGhostSourceFolders Include="%(__Temp3.Identity)" />
     </ItemGroup>
 
     <ItemGroup>
@@ -171,8 +228,8 @@
     </ItemGroup>
 
     <ItemGroup>
-      <RelativeToAbsolutePathsTask Remove="%(FeatureGhostSourceFoldersPrivate.Identity)" />
-      <RelativeToAbsolutePathsTask Include="%(__Temp30.Identity)" />
+      <FeatureGhostSourceFolders Remove="%(FeatureGhostSourceFoldersPrivate.Identity)" />
+      <FeatureGhostSourceFolders Include="%(__Temp30.Identity)" />
     </ItemGroup>
 
 
@@ -186,6 +243,18 @@
       <FeatureNativeSourceFolders Include= "@(FeatureNativeSourceFoldersPrivate)"/>
       <FeatureGhostSourceFolders Include= "@(FeatureSourceFoldersPrivate)"/>
       <FeatureGhostSourceFolders Include= "@(FeatureGhostSourceFoldersPrivate) "/>
+    </ItemGroup>
+
+    <ItemGroup>
+      <!-- Folder preference order:
+            - Native Source Folders
+            - Source Folders
+            - Include Folders
+      -->
+      <FeatureTopNativeSourceFolders Include= "@(FeatureTopSourceFoldersPrivate)"/>
+      <FeatureTopNativeSourceFolders Include= "@(FeatureTopNativeSourceFoldersPrivate)"/>
+      <FeatureTopGhostSourceFolders Include= "@(FeatureTopSourceFoldersPrivate)"/>
+      <FeatureTopGhostSourceFolders Include= "@(FeatureTopGhostSourceFoldersPrivate) "/>
     </ItemGroup>
 
     <!-- <Error Text="@(FeatureSourceFolders), @(FeatureNativeSourceFolders), @(FeatureGhostSourceFolders)" /> -->
@@ -236,9 +305,21 @@
       <_GhostAllIncludedPathItem Include= "@(FeatureGhostSourceFolders) "/>
     </ItemGroup>
 
+    <ItemGroup>
+      <!-- Folder preference order:
+            - Native Source Folders
+            - Source Folders
+            - Include Folders
+      -->
+      <TOP_NativeIncludedPathsItem Include= "@(FeatureTopNativeSourceFolders)" />
+      <TOP__GhostAllIncludedPathItem Include= "@(FeatureTopGhostSourceFolders) "/>
+    </ItemGroup>
+
+    <Message Text="TOP_NativeIncludedPathsItem: @(TOP_NativeIncludedPathsItem)" Importance="High" />
+
     <PropertyGroup>
-      <_AllNativeIncludedPaths>$(_AllNativeIncludedPaths);@(NativeIncludedPathsItem)</_AllNativeIncludedPaths>
-      <_AllGhostIncludedPaths>$(_AllGhostIncludedPaths);@(GhostIncludedPathsItem)</_AllGhostIncludedPaths>
+      <_AllNativeIncludedPaths>@(TOP_NativeIncludedPathsItem);$(_AllNativeIncludedPaths);@(NativeIncludedPathsItem)</_AllNativeIncludedPaths>
+      <_AllGhostIncludedPaths>@(TOP__GhostAllIncludedPathItem);$(_AllGhostIncludedPaths);@(GhostIncludedPathsItem)</_AllGhostIncludedPaths>
     </PropertyGroup>
   </Target>
 

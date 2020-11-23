@@ -295,8 +295,6 @@ Please refer to Halwayi's license agreement for more details
       <Output PropertyName= "FeatureCFile" TaskParameter= "FeatureMetaFile" />
     </FeatureTask>
 
-
-
     <MSBuild Projects= "$(TargetsToolPath)\$(TargetFile)"
              Targets= "$(BuildTarget)"
              Properties= " _TargetName = %(TargetsFiltered.Identity); _VariantName = %(TargetsFiltered.Variant);
